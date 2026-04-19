@@ -86,4 +86,6 @@ files:
 post_generation_notes:
   - Run npm run dist to compile SCSS → CSS.
   - If JS exists, attach the library globally (info.yml libraries:) or conditionally ($variables['#attached'] in preprocess hook).
+  - Drupal configuration must exist before testing: field.storage.*, field.field.*, core.entity_form_display.*, core.entity_view_display.*, paragraphs.paragraphs_type.*. Export from a working environment via `drush cex` or create manually in config/install.
+  - If this component backs a paragraph type, paragraph configuration (see above) must also exist before the full stack can be tested.
 ```

@@ -65,5 +65,6 @@ files:
       <only the new library entry — not the entire file>
 post_generation_notes:
   - Ensure the paragraph bundle and all mapped fields exist in Drupal configuration before testing.
+  - Drupal configuration must exist before testing: field.storage.*, field.field.*, core.entity_form_display.*, core.entity_view_display.*, paragraphs.paragraphs_type.*. Export from a working environment via `drush cex` or create manually in config/install.
   - Run drush cr after adding templates and preprocess hooks.
 ```
