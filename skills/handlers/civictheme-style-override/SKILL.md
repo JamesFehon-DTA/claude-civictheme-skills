@@ -43,6 +43,7 @@ Examples:
 Read before generating:
 
 - `references/variables-and-theming.md` — full naming conventions, three levels of colour override, map extension patterns, SCSS mixin usage, where to find available variables
+- `../../references/civictheme-field-storage.md` — storage type, cardinality, and HTML support for every canonical `field_c_p_*` / `field_c_n_*`. Relevant when a requested style change depends on markup shape (e.g. "style the summary text as multi-paragraph rich text"): confirm the backing field actually stores that shape before committing to SCSS selectors that assume paragraph-level descendants. If the field is `string`/`string_long`, the rendered output is a single text node, not wrapped block elements — recommend a markup-level change instead of a style override.
 
 ## Output contract
 
