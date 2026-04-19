@@ -27,7 +27,7 @@ function mytheme_preprocess_paragraph__my_paragraph(array &$variables): void {
 CivicTheme ships preprocess helpers for the standard paragraph fields. Call them from a paragraph preprocess hook to get consistent prop mapping:
 
 - `_civictheme_preprocess_paragraph__paragraph_field__title($variables)` — maps the standard title field to `$variables['title']`.
-- `_civictheme_preprocess_paragraph__paragraph_field__content($variables)` — maps the standard body/content field to `$variables['content_items']` (or the equivalent, depending on component).
+- `_civictheme_preprocess_paragraph__paragraph_field__content($variables)` — populates the body/content prop(s) on `$variables` from the standard content field. The exact output-variable name depends on the helper's implementation (commonly `$variables['content_items']` for list-shaped paragraphs). If your component's Twig expects a specific prop name, map it explicitly after calling the helper rather than relying on a default.
 
 ```php
 function mytheme_preprocess_paragraph__my_paragraph(array &$variables): void {
@@ -37,6 +37,8 @@ function mytheme_preprocess_paragraph__my_paragraph(array &$variables): void {
   $variables['content'] = NULL;
 }
 ```
+
+**Ordering**: call the helpers first, then set `$variables['content'] = NULL` last. SKILL.md mandates `content = NULL`; placing it after the helpers avoids any risk of a helper writing to that key and being overwritten (or vice versa).
 
 ### Rule
 
