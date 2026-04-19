@@ -5,7 +5,9 @@ description: Generate JS and CSS enhancements targeting existing CivicTheme mark
 
 # CivicTheme JS/CSS Enhancement
 
-Generate JS, SCSS, and library files for a behaviour enhancement on existing CivicTheme markup.
+Generate JS, CSS, and library files for a behaviour enhancement on existing CivicTheme markup.
+
+Enhancements **extend** CivicTheme — they do not override it. Files ship as plain `.css` and `.js` (no `.scss`, no `npm run dist`) and declare their own library that loads alongside CivicTheme's.
 
 ## Required inputs
 
@@ -41,8 +43,8 @@ Read before generating:
 ```yaml
 enhancement_name: <kebab-case-name>
 files:
-  - path: components/[level]/[enhancement-name]/[enhancement-name].scss
-    purpose: enhancement styles
+  - path: components/[level]/[enhancement-name]/[enhancement-name].css
+    purpose: enhancement styles (plain CSS — no SCSS, no build step)
     contents: |
       <full file contents>
   - path: components/[level]/[enhancement-name]/[enhancement-name].js
@@ -56,6 +58,4 @@ files:
 attachment_notes:
   - <global: add [THEME_MACHINE_NAME]/[name] to libraries: in [THEME_MACHINE_NAME].info.yml>
   - <OR conditional: $variables['#attached']['library'][] = '[THEME_MACHINE_NAME]/[name]'; in preprocess hook — include the specific hook name>
-build_notes:
-  - Run npm run dist to compile SCSS → CSS.
 ```
