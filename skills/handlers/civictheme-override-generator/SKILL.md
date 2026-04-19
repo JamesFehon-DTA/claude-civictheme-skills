@@ -42,6 +42,7 @@ Read before generating:
 - `references/component-yml-patterns.md` — full schema, enum rules, `replaces` directive, override-specific notes
 - `references/twig-patterns.md` — prop validation, `only` keyword, class construction
 - `references/field-naming.md` — field prefix rules for any custom fields added to the override
+- `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
 
 ## Output contract
 
