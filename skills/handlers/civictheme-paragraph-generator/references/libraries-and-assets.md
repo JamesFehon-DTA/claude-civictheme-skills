@@ -195,6 +195,20 @@ libraries-override:
 
 **Do not modify `libraries-override`** unless adding an entirely new library override. These mappings must be preserved — without them, both CivicTheme's original assets and the sub-theme's assets load simultaneously, causing style and script conflicts.
 
+### Replacing a CivicTheme JS behaviour
+
+The same `libraries-override` mechanism replaces JS as well as CSS. Map the CivicTheme component JS path on the left to the sub-theme's replacement on the right:
+
+```yaml
+# [THEME_MACHINE_NAME].info.yml — replace a CivicTheme JS behaviour in a sub-theme
+libraries-override:
+  civictheme/some-component:
+    js:
+      components/02-molecules/some-component/some-component.js: components/02-molecules/some-component/some-component.js
+```
+
+The left-hand path is resolved relative to the base theme; the right-hand path is resolved relative to the sub-theme. Both can share the same relative path because they live in their respective theme directories.
+
 ---
 
 ## Asset Compilation
