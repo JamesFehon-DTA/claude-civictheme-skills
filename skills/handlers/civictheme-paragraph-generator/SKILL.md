@@ -40,6 +40,7 @@ Read before generating:
 - `references/field-naming.md` — allowed/disallowed field prefixes, linting rules, sub-theme vs CivicTheme namespaces
 - `references/twig-patterns.md` — paragraph template pattern, `only` keyword rationale
 - `references/libraries-and-assets.md` — conditional library attachment, SDC CSS auto-loading
+- `references/preprocess-helpers.md` — CivicTheme field helper API, shared preprocess helpers, when `\Drupal::` is appropriate
 
 ## Output contract
 
