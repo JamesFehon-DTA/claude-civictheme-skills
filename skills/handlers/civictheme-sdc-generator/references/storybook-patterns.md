@@ -54,13 +54,17 @@ Enums in YAML become `radio` or `select` controls with explicit `options`:
 ```yaml
 # my-card.component.yml (excerpt)
 props:
-  theme:
-    type: string
-    enum: [light, dark]
-  size:
-    type: string
-    enum: [small, medium, large]
+  type: object
+  properties:
+    theme:
+      type: string
+      enum: [light, dark]
+    size:
+      type: string
+      enum: [small, medium, large]
 ```
+
+The `props:` key is a JSON Schema object — prop definitions live under `properties:`, not directly under `props:`. See `references/component-yml-patterns.md` for the full schema.
 
 ```js
 argTypes: {
