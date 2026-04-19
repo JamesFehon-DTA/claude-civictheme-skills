@@ -195,19 +195,22 @@ libraries-override:
 
 **Do not modify `libraries-override`** unless adding an entirely new library override. These mappings must be preserved — without them, both CivicTheme's original assets and the sub-theme's assets load simultaneously, causing style and script conflicts.
 
-### Replacing a CivicTheme JS behaviour
+### Replacing an individual JS asset
 
-The same `libraries-override` mechanism replaces JS as well as CSS. Map the CivicTheme component JS path on the left to the sub-theme's replacement on the right:
+The top-level example above replaces CivicTheme's entire bundled JS via the `civictheme/global` library. `libraries-override` also supports per-asset replacement within any library — map a specific JS path the library declares, on the left, to the sub-theme's replacement, on the right. Adding a new per-asset mapping falls under "adding a new library override" in the warning above — you are adding a mapping, not altering an existing one.
 
 ```yaml
-# [THEME_MACHINE_NAME].info.yml — replace a CivicTheme JS behaviour in a sub-theme
+# [THEME_MACHINE_NAME].info.yml — shape, not a literal recipe
 libraries-override:
-  civictheme/some-component:
+  <provider>/<library-name>:        # the library whose asset you want to replace
     js:
-      components/02-molecules/some-component/some-component.js: components/02-molecules/some-component/some-component.js
+      <path-declared-by-library>: <sub-theme-relative-path>
 ```
 
-The left-hand path is resolved relative to the base theme; the right-hand path is resolved relative to the sub-theme. Both can share the same relative path because they live in their respective theme directories.
+- The left-hand path must match a `js:` entry declared by the target library — otherwise Drupal has nothing to override and the mapping is silently ignored.
+- The left-hand path is resolved relative to the library's provider (e.g. the base theme); the right-hand path is resolved relative to the sub-theme.
+
+**Verify the source library first.** Open the target library's `.libraries.yml` and confirm the exact `js:` path to target. CivicTheme's main `global` library currently declares a single bundled file (`dist/civictheme.drupal.base.js`); per-component JS assets only exist if a library declares them individually. If CivicTheme's JS is bundled, swap the bundle (see the top-level example above) — per-component override won't apply.
 
 ---
 
