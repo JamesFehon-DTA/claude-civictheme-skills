@@ -32,4 +32,4 @@ Skills were created by referencing CivicTheme technical facts:
 * **Inheritance:** `libraryOverrides` must be explicitly redeclared in sub-theme overrides.
 * **Security:** The `|raw` filter is prohibited (removed in v1.12.2).
 * **Extension:** Use full replacement; `{% extends %}` is no longer supported as of v1.11.0.
-* **SDC Integration:** SDC auto-loads both CSS and JS; dependencies belong in `libraryOverrides`.
+* **SDC Integration:** An SDC auto-loads its own co-located library (CSS and JS from the component directory). Enhancements targeting existing CivicTheme markup without a new SDC must attach a library manually.
