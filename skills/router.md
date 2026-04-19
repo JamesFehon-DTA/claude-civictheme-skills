@@ -22,6 +22,11 @@ Confirm before classifying — ask the user only if values are unknown:
 | `[THEME_MACHINE_NAME]` | Sub-theme machine name (no "civic" prefix) | `my_agency` |
 | `[THEME_DIR]` | Path to sub-theme root | `web/themes/custom/my_agency` |
 | `[BASE_THEME_DIR]` | Path to CivicTheme base theme | `web/themes/contrib/civictheme` |
+| `[CIVICTHEME_VERSION]` | CivicTheme UIKit version installed | `1.12.2` (default if unknown) |
+
+Version-specific behaviour that downstream skills must branch on:
+- `|raw` filter removed in 1.12.2 — never emit in generated Twig when version ≥ 1.12.2
+- `{% extends %}` unsupported from 1.11.0 onward — overrides must be full replacements, never extensions
 
 If the user's prompt already contains values that satisfy these fields, confirm them back explicitly before passing downstream. Never pre-fill silently.
 
@@ -58,6 +63,7 @@ project_context:
   theme_machine_name: <[THEME_MACHINE_NAME]>
   theme_dir: <[THEME_DIR]>
   base_theme_dir: <[BASE_THEME_DIR]>
+  civictheme_version: <[CIVICTHEME_VERSION]>
 recommended_next_skill: <civictheme-sdc-generator | civictheme-override-generator | civictheme-style-override | civictheme-js-enhancement | civictheme-paragraph-generator>
 ```
 

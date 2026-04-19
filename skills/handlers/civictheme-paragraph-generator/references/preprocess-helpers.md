@@ -2,11 +2,11 @@
 
 How to read fields and related data inside a paragraph preprocess hook. Use CivicTheme's field helper API as the default; use the shared preprocess helpers only when their hardcoded inputs and output keys match what your component needs; fall back to `\Drupal::` for things the helpers don't cover.
 
-All line citations in this document refer to `web/themes/contrib/civictheme/includes/paragraphs.inc` at commit `29fa0fd3271d1e8ef48179f3043385304c699716` of the [CivicTheme monorepo](https://github.com/civictheme/monorepo-drupal/blob/29fa0fd3271d1e8ef48179f3043385304c699716/web/themes/contrib/civictheme/includes/paragraphs.inc). Verify against your installed CivicTheme version before relying on specific line numbers.
+All line citations in this document refer to `web/themes/contrib/civictheme/includes/paragraphs.inc` at commit `29fa0fd3271d1e8ef48179f3043385304c699716` of the [CivicTheme monorepo](https://github.com/civictheme/monorepo-drupal/blob/29fa0fd3271d1e8ef48179f3043385304c699716/web/themes/contrib/civictheme/includes/paragraphs.inc). Field getter signatures below are from `includes/utilities.inc` on the same commit. Verify against your installed CivicTheme version before relying on specific line numbers.
 
 ## CivicTheme field helper API (preferred)
 
-### `civictheme_get_field_value($entity, $field_name, $multiple = FALSE, $default = NULL)`
+### `civictheme_get_field_value($entity, $field_name, $only_first = FALSE, $default = NULL, array &$build = [])`
 
 The standard accessor for all CivicTheme entity fields. Handles empty checks and basic entity reference resolution, so callers avoid repetitive null-guarding.
 
@@ -14,23 +14,65 @@ The standard accessor for all CivicTheme entity fields. Handles empty checks and
 function mytheme_preprocess_paragraph__my_paragraph(array &$variables): void {
   $paragraph = $variables['paragraph'];
 
-  $variables['title'] = civictheme_get_field_value($paragraph, 'field_c_p_title');
-  $variables['items'] = civictheme_get_field_value($paragraph, 'field_c_p_items', TRUE, []);
+  $variables['title'] = civictheme_get_field_value($paragraph, 'field_c_p_title', TRUE);
+  $variables['items'] = civictheme_get_field_value($paragraph, 'field_c_p_items', FALSE, [], $variables);
 
   $variables['content'] = NULL;
 }
 ```
 
-- `$multiple = TRUE` returns an array of values for multi-value fields.
+- `$only_first = TRUE` returns the first value only (scalar); `FALSE` (default) returns an array.
 - `$default` is returned when the field is empty or missing.
+- `$build` — pass `$variables` as a reference to bubble cacheable metadata into the paragraph render array. See "Cacheable metadata" below.
 
-### `civictheme_get_referenced_entity_labels($entity, $field_name, $build = NULL)`
+### `civictheme_get_field_referenced_entities($entity, $field_name, array &$build = [])`
+
+Returns referenced entities with access checks applied. Used for paragraph fields that reference other entities (e.g. `field_c_p_list_items`, `field_c_p_reference`). Upstream usage: `manual_list.inc:42`.
+
+```php
+$items = civictheme_get_field_referenced_entities($paragraph, 'field_c_p_list_items', $variables);
+```
+
+### `civictheme_get_referenced_entity_labels($entity, $field_name, array &$build = [])`
 
 Returns labels for entities referenced from a field (typically taxonomy terms on `field_c_p_topics` or `field_c_n_topics`). Resolves the reference and extracts the human-readable label. Use this for tags/topics props rather than loading the taxonomy terms manually.
 
 ### `_civictheme_process__html_content($html, $options = [], $format = NULL)`
 
 Processes formatted-text HTML for component consumption: converts bare URLs to links, applies external-link behaviour from theme settings, and substitutes the contextual theme class (`ct-theme-light` → `ct-theme-dark`, etc.) when `$options['theme']` is provided. Run formatted-text field values through this before handing them to components; raw values from `civictheme_get_field_value()` on a `text_long` field are unprocessed and will not have link behaviour applied.
+
+## Cacheable metadata
+
+CivicTheme manages cacheable metadata at the field-getter level. Per the [1.12.0 manual update instructions](https://docs.civictheme.io/getting-started/civictheme-1.12.0-manual-update-instructions.md): "CivicTheme was not correctly managing cacheable metadata within its preprocess functions. We have updated the CivicTheme API to manage this at the field getter level."
+
+Pass `$variables` (or any render array with a `#cache` key) as the `$build` parameter to any getter that loads referenced entities or applies access checks. Internally the getter uses `CacheableMetadata::createFromRenderArray($build)->applyTo($build)` to bubble referenced-entity cache tags + access-check cacheability into the render array.
+
+- `civictheme_get_field_referenced_entities` and `civictheme_get_referenced_entity_labels` emit a deprecation notice when called without `$build`. Upstream states the parameter will be required in `civictheme:1.13.0` — see [drupal.org/node/3552745](https://www.drupal.org/node/3552745). The failure mode in 1.13.0 is not specified; pass `$variables` now to avoid the deprecation warning and future-proof the call.
+- `civictheme_get_field_value` accepts `$build` as the 5th positional argument. Pass `$variables` when the field is an entity reference (the getter resolves references internally).
+
+In addition, attach the paragraph's own cache tags explicitly. Upstream pattern from `manual_list.inc:39`:
+
+```php
+$variables['#cache']['tags'] = $paragraph->getCacheTags();
+```
+
+For per-row or per-list patterns that merge multiple entities' tags, CivicTheme uses `Cache::mergeTags()` — e.g. `block.inc:157` merges block + node tags.
+
+### What belongs in a paragraph preprocess `#cache`
+
+| Need | Pattern |
+|---|---|
+| Paragraph's own cacheability | `$variables['#cache']['tags'] = $paragraph->getCacheTags();` |
+| Access-checked referenced entities | Pass `$variables` as `$build` to the getter; it handles the rest |
+| Output varies by URL path / query | Append `url.path` / `url.query_args:key` to `$variables['#cache']['contexts']` — matches `page.inc:62`, `views.inc:122` |
+| Output varies by role | Append `user.roles` (not bare `user` — bare `user` defeats Akamai edge caching) |
+| Per-user state (bookmarks, cart count) | Use `#lazy_builder` placeholder instead — keeps the rest of the page cacheable |
+
+### What to avoid
+
+- `$variables['#cache']['max-age'] = 0` in a paragraph preprocess — makes the entire host node page uncacheable at Akamai/Purge. CivicTheme uses `max-age = 0` only in narrow cases (e.g. `banner.inc:94`, scoped to a block rendered without node context).
+- Loading entities via `\Drupal::entityTypeManager()` without merging their cache metadata — use `civictheme_get_field_referenced_entities` with `$build` where possible, or manually merge via `CacheableMetadata::createFromObject($entity)->applyTo($variables)`.
+- Bare `user` context — use `user.roles` or `user.permissions` unless output is genuinely unique per user.
 
 ## Shared paragraph-field preprocess helpers
 

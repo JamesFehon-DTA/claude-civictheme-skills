@@ -26,6 +26,17 @@ Generate the Drupal integration layer for a CivicTheme-styled paragraph type.
   - `field_p_` is **not a real CivicTheme convention** — never use it
   - See `references/field-naming.md` for full rules and linting logic
 
+## Cacheability
+
+CivicTheme manages cacheable metadata at the field-getter level (introduced as a security fix in 1.12.0). Generated preprocess hooks must follow this convention.
+
+- Pass `$variables` as the `$build` argument to `civictheme_get_field_referenced_entities()` and `civictheme_get_referenced_entity_labels()`. Omitting it triggers a deprecation warning in 1.12.x; upstream states the parameter will be required in 1.13.0.
+- Attach the paragraph's own cache tags: `$variables['#cache']['tags'] = $paragraph->getCacheTags();` — mirrors `manual_list.inc:39` in CivicTheme source.
+- For context-varying output (URL, query, role) use narrow contexts: `url.path`, `url.query_args:key`, `user.roles`. Avoid bare `user` — it defeats Akamai edge caching on GovCMS SaaS.
+- Never set `$variables['#cache']['max-age'] = 0` in a paragraph preprocess — makes the host node page uncacheable at the edge. Per-user state belongs in a `#lazy_builder` placeholder so the surrounding page stays cacheable.
+
+See `references/preprocess-helpers.md` §Cacheable metadata for worked examples, upstream source references, and the deprecation link.
+
 ## Decision logic
 
 - The underlying SDC component doesn't exist yet → note that `civictheme-sdc-generator` must run first (or in parallel); do not block generation
@@ -54,9 +65,9 @@ files:
     contents: |
       <full file contents>
   - path: includes/paragraphs--[paragraph-machine-name].inc
-    purpose: preprocess hook — field mapping, content null, JS library attachment
+    purpose: preprocess hook — field mapping, cache-tag attachment, content null, JS library attachment
     contents: |
-      <full file contents>
+      <full file contents — must include $variables['#cache']['tags'] = $paragraph->getCacheTags(); and pass $variables as $build to civictheme_get_field_referenced_entities / civictheme_get_referenced_entity_labels where referenced entities are loaded>
   - path: [THEME_MACHINE_NAME].theme
     purpose: preprocess include registration
     contents: |
