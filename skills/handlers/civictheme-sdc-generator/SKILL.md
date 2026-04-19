@@ -22,7 +22,7 @@ Generate all files for a new SDC component in a CivicTheme sub-theme.
 - Namespace: `[THEME_MACHINE_NAME]:[component-name]`
 - Directory: `components/[01-atoms|02-molecules|03-organisms|04-templates]/[name]/`
 - All files share the same base name as the directory.
-- Storybook is optional — include `.stories.js` only if the user confirms Storybook is present.
+- Storybook is optional — include `.stories.js` only if the user confirms Storybook is present. See `references/storybook-patterns.md` for the story file structure.
 
 ## Standard shared props
 
@@ -56,6 +56,7 @@ Read before generating:
 - `references/component-yml-patterns.md` — full `.component.yml` schema, prop types, slots, SDC loading notes
 - `references/twig-patterns.md` — prop validation, class construction, `only` keyword, ARIA patterns, data-attribute selectors
 - `references/libraries-and-assets.md` — library declaration format, CSS vs JS loading, `components_combined/` rule
+- `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
 
 ## Output contract
 
