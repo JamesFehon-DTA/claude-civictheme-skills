@@ -22,7 +22,7 @@ Generate all files for a new SDC component in a CivicTheme sub-theme.
 - Namespace: `[THEME_MACHINE_NAME]:[component-name]`
 - Directory: `components/[01-atoms|02-molecules|03-organisms|04-templates]/[name]/`
 - All files share the same base name as the directory.
-- Storybook is optional — include `.stories.js` only if the user confirms Storybook is present.
+- Storybook is optional — include `.stories.js` only if the user confirms Storybook is present. See `references/storybook-patterns.md` for the story file structure.
 
 ## Standard shared props
 
@@ -56,6 +56,7 @@ Read before generating:
 - `references/component-yml-patterns.md` — full `.component.yml` schema, prop types, slots, SDC loading notes
 - `references/twig-patterns.md` — prop validation, class construction, `only` keyword, ARIA patterns, data-attribute selectors
 - `references/libraries-and-assets.md` — library declaration format, CSS vs JS loading, `components_combined/` rule
+- `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
 - `../../references/civictheme-field-storage.md` — storage shape of every canonical `field_c_p_*` / `field_c_n_*`. Consult when a component is expected to back a specific CivicTheme field: declare the prop's `type` (`string` vs rich `object`/HTML-bearing) and whether it is single or array-shaped to match the storage. If the intended paragraph field is `string`/`string_long` and your prop expects HTML, either change the prop to plain text or require a custom sub-theme `text_long` field — the base storage will emit escaped markup otherwise.
 
 ## Output contract
