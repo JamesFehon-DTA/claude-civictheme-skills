@@ -2,8 +2,23 @@
 
 Use this prompt to audit the skill files in `claude-civictheme-skills` against the
 upstream CivicTheme source. Run it in a Claude Code session where the CivicTheme
-monorepo is available locally (clone or worktree), OR where the agent has web
-access and can read `github.com/civictheme/monorepo` and `drupal.org`.
+sources are available locally (clone or worktree), OR where the agent has web
+access and can read the upstream repositories and `drupal.org`.
+
+Authoritative upstream sources:
+- Drupal theme / SDC implementation: `https://github.com/civictheme/monorepo-drupal`
+- UI Kit (SDC package): `https://github.com/civictheme/uikit/tree/main/packages/sdc`
+- UI Kit (Twig package, for non-Drupal usage): `https://github.com/civictheme/uikit/tree/main/packages/twig`
+
+### Breaking changes since CivicTheme 1.11.1
+
+Package names have changed from a single package to workspace packages:
+- Use `@civictheme/twig` for the Twig implementation (replaces `@civictheme/uikit` for non-Drupal consumers).
+- Use `@civictheme/sdc` for the Drupal SDC implementation.
+
+CivicTheme (the Drupal theme) is switching to the SDC implementation. Skills
+that reference `@civictheme/uikit`, the old single-package layout, or the legacy
+`civictheme/monorepo` repo URL are out of date and should be flagged.
 
 Replace `<PATH_TO_SKILLS_REPO>` and `<PATH_TO_CIVICTHEME>` before running.
 
@@ -11,8 +26,11 @@ Replace `<PATH_TO_SKILLS_REPO>` and `<PATH_TO_CIVICTHEME>` before running.
 
 You are auditing a prompt library called `claude-civictheme-skills` for
 compatibility with the **upstream CivicTheme Drupal theme**. The skills live at
-`<PATH_TO_SKILLS_REPO>`; authoritative CivicTheme source is at
-`<PATH_TO_CIVICTHEME>` (or `https://github.com/civictheme/monorepo`).
+`<PATH_TO_SKILLS_REPO>`; authoritative CivicTheme sources are at
+`<PATH_TO_CIVICTHEME>` or, on the web:
+- `https://github.com/civictheme/monorepo-drupal` (Drupal theme)
+- `https://github.com/civictheme/uikit/tree/main/packages/sdc` (SDC components)
+- `https://github.com/civictheme/uikit/tree/main/packages/twig` (Twig components)
 
 The skills are prompts, not code. Each skill tells Claude how to generate Drupal
 theme files (SDC components, paragraph integration, Twig, SCSS, JS libraries).
@@ -84,6 +102,16 @@ Verify in the real CivicTheme `.libraries.yml` and any sub-theme examples:
 - Does CivicTheme's Storybook setup actually import `.twig` files directly as
   components, or does it use a different preset?
 - Are `argTypes` patterns consistent with how CivicTheme itself writes stories?
+
+### 7. Package references and upstream URLs (post-1.11.1)
+- Do any skills still reference `@civictheme/uikit` as a single package? Since
+  1.11.1, consumers must use `@civictheme/twig` (Twig, non-Drupal) or
+  `@civictheme/sdc` (Drupal SDC).
+- Do any skills link to `github.com/civictheme/monorepo`? The Drupal theme now
+  lives at `github.com/civictheme/monorepo-drupal`, and the components live in
+  `github.com/civictheme/uikit` under `packages/sdc` and `packages/twig`.
+- Flag any import paths, `package.json` snippets, or documentation references
+  that use the pre-1.11.1 package name or repo URL.
 
 ## Output format
 
