@@ -6,7 +6,7 @@ Skills consult this file to warn authors when the backing storage contradicts a 
 
 ## Pinned commit
 
-All citations below point at commit [`29fa0fd3271d1e8ef48179f3043385304c699716`](https://github.com/civictheme/monorepo-drupal/tree/29fa0fd3271d1e8ef48179f3043385304c699716) of the [CivicTheme monorepo](https://github.com/civictheme/monorepo-drupal), under `web/themes/contrib/civictheme/config/install/`. The same commit pins the other references in this skills package (e.g. [`civictheme-paragraph-generator/references/preprocess-helpers.md`](../handlers/civictheme-paragraph-generator/references/preprocess-helpers.md)). Verify against your installed CivicTheme version before relying on specific line numbers.
+All citations below point at commit [`29fa0fd3271d1e8ef48179f3043385304c699716`](https://github.com/civictheme/monorepo-drupal/tree/29fa0fd3271d1e8ef48179f3043385304c699716) of the [CivicTheme monorepo](https://github.com/civictheme/monorepo-drupal), under `web/themes/contrib/civictheme/config/install/`. The same commit pins the other references in this skills package (e.g. [`civictheme-paragraph-generator/references/preprocess-helpers.md`](../../civictheme-paragraph-generator/references/preprocess-helpers.md)). Verify against your installed CivicTheme version before relying on specific line numbers.
 
 ## How to refresh for a new CivicTheme release
 
