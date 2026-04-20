@@ -19,11 +19,11 @@ This repository utilizes a distributed architecture to avoid monolithic skill de
 
 The handlers consume a set of canonical reference files to ensure consistency across output:
 
-* **Component YAML:** Defined patterns for `.component.yml` structures.
-* **Twig Patterns:** Standardized markup practices, including `attributes.addClass()` for root elements.
-* **Field Naming:** Consistent Drupal field machine name conventions.
-* **Libraries & Assets:** Management of `libraryOverrides` and frontend assets.
-* **Variables:** Centralized SCSS theming tokens and variables.
+* **`twig-patterns.md`:** Standardized markup practices, including `attributes.addClass()` for root elements.
+* **`field-naming.md`:** Consistent Drupal field machine name conventions.
+* **`libraries-and-assets.md`:** Management of `libraryOverrides` and frontend assets.
+* **`storybook-patterns.md`:** SDC story structure and Storybook conventions.
+* **`civictheme-field-storage.md`:** CivicTheme field storage export used as reference data.
 
 Cross-handler references are stored once under `skills/_shared/references/` and symlinked into each handler's `references/` folder. The Desktop packager follows symlinks, so every `.skill` archive ships a self-contained copy.
 
@@ -50,8 +50,18 @@ skills/
 scripts/
   build-desktop.sh                              ← builds dist/desktop/*.skill
   package_skill.py                              ← vendored Anthropic packager
+  lint-skills.py                                ← CI structural validator
+  civictheme-compat-review-prompt.md            ← compatibility review prompt
+.github/workflows/
+  lint.yml                                      ← runs lint-skills.py on PRs
+  release.yml                                   ← builds .skill archives on tags
 dist/desktop/                                   ← gitignored build output
 ```
+
+## Continuous integration
+
+* **`lint.yml`** runs `scripts/lint-skills.py` on every pull request and push to `main`. The linter validates SKILL.md frontmatter, keeps `references/*.md` and in-file citations in sync, verifies the router references every handler directory, resolves every relative markdown link, and parses every fenced ```yaml block. See `scripts/lint-skills.py` for the full check list.
+* **`release.yml`** is triggered by pushing a `v*.*.*` tag. It lints, runs `scripts/build-desktop.sh`, and attaches the resulting `dist/desktop/*.skill` archives to the GitHub Release.
 
 ## Install
 
@@ -73,7 +83,9 @@ For a per-project install, link into the project's `.claude/skills/` directory i
 
 ### Claude Desktop (parallel `.skill` uploads)
 
-Build the six `.skill` archives and upload them to your Desktop project's skill knowledge:
+Tagged releases ship prebuilt `.skill` archives on the repository's GitHub Releases page — download the six attached files and upload them to your Desktop project's skill knowledge.
+
+To build the archives locally (for contributing or installing from an untagged commit):
 
 ```bash
 ./scripts/build-desktop.sh
