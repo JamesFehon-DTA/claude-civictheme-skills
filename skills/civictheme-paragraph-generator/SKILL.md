@@ -52,7 +52,7 @@ Read before generating:
 - `references/twig-patterns.md` — paragraph template pattern, `only` keyword rationale
 - `references/libraries-and-assets.md` — conditional library attachment, SDC CSS auto-loading
 - `references/preprocess-helpers.md` — CivicTheme field helper API, shared preprocess helpers, when `\Drupal::` is appropriate
-- `../../references/civictheme-field-storage.md` — storage type, cardinality, max length, HTML support, and bundle attachments for every canonical `field_c_p_*` / `field_c_n_*`. Consult before mapping a field to a component prop: if the target prop expects HTML but the field is `string` / `string_long` (e.g. `field_c_p_summary`, `field_c_p_url`), warn the author — the markup will render escaped. Use it to confirm cardinality before deciding the `$multiple` flag on `civictheme_get_field_value()`.
+- `references/civictheme-field-storage.md` — storage type, cardinality, max length, HTML support, and bundle attachments for every canonical `field_c_p_*` / `field_c_n_*`. Consult before mapping a field to a component prop: if the target prop expects HTML but the field is `string` / `string_long` (e.g. `field_c_p_summary`, `field_c_p_url`), warn the author — the markup will render escaped. Use it to confirm cardinality before deciding the `$multiple` flag on `civictheme_get_field_value()`.
 
 ## Output contract
 

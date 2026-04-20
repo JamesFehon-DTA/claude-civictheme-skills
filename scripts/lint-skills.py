@@ -25,8 +25,10 @@ except ImportError:
     sys.exit(2)
 
 REPO = Path(__file__).resolve().parent.parent
-HANDLERS = REPO / "skills" / "handlers"
-ROUTER = REPO / "skills" / "router.md"
+SKILLS = REPO / "skills"
+ROUTER_NAME = "civictheme-component-type-selector"
+ROUTER = SKILLS / ROUTER_NAME / "SKILL.md"
+SKIP_SKILL_DIRS = {"_shared"}
 
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
 REF_CITATION_RE = re.compile(r"`references/([a-zA-Z0-9_\-.]+\.md)`")
@@ -84,11 +86,14 @@ def check_router(errors: list[str]) -> None:
     if not ROUTER.exists():
         errors.append(f"{ROUTER}: missing")
         return
-    handler_names = {p.name for p in HANDLERS.iterdir() if p.is_dir()}
+    handler_names = {
+        p.name for p in SKILLS.iterdir()
+        if p.is_dir() and p.name not in SKIP_SKILL_DIRS and p.name != ROUTER_NAME
+    }
     text = ROUTER.read_text()
     for name in handler_names:
         if name not in text:
-            errors.append(f"router.md: does not reference handler '{name}'")
+            errors.append(f"{ROUTER.relative_to(REPO)}: does not reference handler '{name}'")
 
 
 SKIP_DIRS = {".git", ".claude", "node_modules"}
@@ -138,12 +143,12 @@ def check_yaml_blocks(errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
-    if not HANDLERS.exists():
-        print(f"FAIL: {HANDLERS} does not exist", file=sys.stderr)
+    if not SKILLS.exists():
+        print(f"FAIL: {SKILLS} does not exist", file=sys.stderr)
         return 1
 
-    for skill_dir in sorted(HANDLERS.iterdir()):
-        if skill_dir.is_dir():
+    for skill_dir in sorted(SKILLS.iterdir()):
+        if skill_dir.is_dir() and skill_dir.name not in SKIP_SKILL_DIRS:
             check_skill(skill_dir, errors)
 
     check_router(errors)
