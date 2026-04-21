@@ -9,9 +9,9 @@ Always generate one. It is the authoritative prop schema for the twig package an
 ## Schema
 
 ```yaml
-name: [Component Name]
+name: Component Name
 status: stable
-description: [One sentence describing what the component does.]
+description: One sentence describing what the component does.
 props:
   type: object
   properties:
@@ -23,11 +23,11 @@ props:
       enum: [top, bottom, both, none]
     with_background:
       type: boolean
-    [component-specific props...]
+    # component-specific props go here
     modifier_class:
       type: string
     attributes:
-      type: Drupal\Core\Template\Attribute
+      type: "Drupal\\Core\\Template\\Attribute"
       title: HTML Attributes
 ```
 
