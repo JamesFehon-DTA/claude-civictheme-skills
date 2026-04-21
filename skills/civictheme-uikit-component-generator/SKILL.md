@@ -64,12 +64,14 @@ files:
     purpose: component styles using design system mixins
     contents: |
       <full file contents>
-  - path: packages/twig/components/[tier]/[name]/[name].component.yml  # only if warranted
-    purpose: prop schema documentation
+  - path: packages/twig/components/[tier]/[name]/[name].component.yml
+    purpose: authoritative prop schema for the twig package
     contents: |
       <full file contents>
 post_generation_notes:
-  - Run node tools/scripts/validate-component-enums.js if .component.yml was generated.
-  - Run npm run dist to compile SCSS.
+  - npm run dist
+  - npm run validate
+  - npm run dev:twig (to preview)
+  - npm run lint (before committing)
 ```
 
