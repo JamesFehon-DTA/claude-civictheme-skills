@@ -66,7 +66,8 @@ Read before generating:
 - `references/twig-patterns.md` — prop validation, `only` keyword, class construction
 - `references/namespace-and-includes.md` — SDC vs components-contrib resolution, include style for overrides, registration schema, failure modes
 - `references/field-naming.md` — field prefix rules for any custom fields added to the override
-- `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
+- `references/component-taxonomy.md` — tier and CSS-only status for all CivicTheme components; use to determine the component's atomic tier and whether it is CSS-only (both affect story pattern selection)
+- `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml`, Pattern A vs B selection (optional — only if Storybook is present)
 
 ## Output contract
 

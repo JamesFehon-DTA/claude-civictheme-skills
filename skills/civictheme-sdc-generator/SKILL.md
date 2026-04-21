@@ -48,6 +48,7 @@ modifier_class:
 - JS requested → generate `.js` file + JS-only library entry (omit CSS from library — SDC auto-loads it)
 - Storybook not confirmed → omit `.stories.js`; note it as optional
 - Atomic level: standalone UI element with no children → atom; composition of atoms → molecule; complex section → organism
+- Storybook story pattern (when Storybook is confirmed): organism/template → Pattern A + Pattern B (theme argType + separate `Dark` export with `globals: { backgrounds: { value: 'dark' } }`); atom/molecule → Pattern A only. SDC always has a Twig template, so the CSS-class-only branch in `references/storybook-patterns.md` does not apply here.
 
 ## Reference files
 
@@ -56,6 +57,7 @@ Read before generating:
 - `references/component-yml-patterns.md` — full `.component.yml` schema, prop types, slots, SDC loading notes
 - `references/twig-patterns.md` — prop validation, class construction, `only` keyword, ARIA patterns, data-attribute selectors
 - `references/libraries-and-assets.md` — library declaration format, CSS vs JS loading, `components_combined/` rule
+- `references/component-taxonomy.md` — all CivicTheme components by tier; confirms that this is a new component not already present in the base theme
 - `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
 - `references/civictheme-field-storage.md` — storage shape of every canonical `field_c_p_*` / `field_c_n_*`. Consult when a component is expected to back a specific CivicTheme field: declare the prop's `type` (`string` vs rich `object`/HTML-bearing) and whether it is single or array-shaped to match the storage. If the intended paragraph field is `string`/`string_long` and your prop expects HTML, either change the prop to plain text or require a custom sub-theme `text_long` field — the base storage will emit escaped markup otherwise.
 
