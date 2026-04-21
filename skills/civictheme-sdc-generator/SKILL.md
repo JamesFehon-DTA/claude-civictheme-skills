@@ -48,6 +48,7 @@ modifier_class:
 - JS requested → generate `.js` file + JS-only library entry (omit CSS from library — SDC auto-loads it)
 - Storybook not confirmed → omit `.stories.js`; note it as optional
 - Atomic level: standalone UI element with no children → atom; composition of atoms → molecule; complex section → organism
+- Storybook story pattern (when Storybook is confirmed): organism/template → Pattern A + Pattern B (theme argType + separate `Dark` export with `globals: { backgrounds: { value: 'dark' } }`); atom/molecule → Pattern A only. SDC always has a Twig template, so the CSS-class-only branch in `references/storybook-patterns.md` does not apply here.
 
 ## Reference files
 

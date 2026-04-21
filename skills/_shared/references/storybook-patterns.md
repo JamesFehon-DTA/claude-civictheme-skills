@@ -2,6 +2,8 @@
 
 Storybook is optional infrastructure in a CivicTheme sub-theme. Only include a `.stories.js` file when the user confirms Storybook is present. When it is, the story documents the component's `.component.yml` prop contract.
 
+This repo targets **Storybook 10**. Do not emit SB8 patterns — they silently break. See the compatibility table at the bottom.
+
 ## File placement
 
 Co-locate the story with the component, using the same base name as the directory:
@@ -14,7 +16,11 @@ components/02-molecules/my-card/
 └── my-card.stories.js
 ```
 
-## Default export structure
+## Two story patterns
+
+### Pattern A — Controls theme toggle
+
+Use for **atoms and molecules** that have a `theme` prop. The `theme` argType radio passes `'light'` or `'dark'` into the Twig template, which applies `ct-theme-light` / `ct-theme-dark` to the root element. Background doesn't change automatically — reviewers toggle it manually.
 
 ```js
 import MyCardTwig from './my-card.twig';
@@ -37,15 +43,112 @@ export default {
     title: { control: { type: 'text' } },
   },
 };
+
+export const Default = {
+  args: {
+    theme: 'light',
+    vertical_spacing: 'none',
+    with_background: false,
+    title: 'Example card title',
+  },
+};
 ```
 
-- `title` — the Storybook sidebar path (`Atoms/...`, `Molecules/...`, `Organisms/...`).
-- `component` — the imported `.twig` file; the Storybook CivicTheme preset renders it.
+### Pattern B — Separate dark variant story
+
+Use when:
+
+- The component is an **organism or template** (Banner, Header, Footer, List, Page…) — visual weight makes a pre-configured dark view valuable alongside the light default.
+- The component has **no Twig template** — the theme class is applied directly in HTML; there is no `theme` argType available.
+
+**Pattern B for Twig-import organisms/templates** — keep the `theme` argType, and also export a `Dark` story with the SB10 `globals` key to pre-select the dark background:
+
+```js
+import MyBannerTwig from './my-banner.twig';
+
+export default {
+  title: 'Organisms/My Banner',
+  component: MyBannerTwig,
+  argTypes: {
+    theme: {
+      control: { type: 'radio' },
+      options: ['light', 'dark'],
+    },
+    // other argTypes...
+  },
+};
+
+export const Default = {
+  args: {
+    theme: 'light',
+    // other args...
+  },
+};
+
+export const Dark = {
+  args: {
+    ...Default.args,
+    theme: 'dark',
+  },
+  globals: {
+    backgrounds: { value: 'dark' },
+  },
+};
+```
+
+**Pattern B for CSS-class-only components** — no Twig import, no `theme` argType; apply the class directly in the `render` function:
+
+```js
+export default {
+  title: 'Molecules/My Component',
+  render: (args) => {
+    const el = document.createElement('div');
+    el.className = 'ct-theme-light my-component';
+    el.innerHTML = `<!-- component HTML -->`;
+    return el;
+  },
+};
+
+export const Default = {
+  args: { /* component-specific args */ },
+};
+
+export const Dark = {
+  args: { ...Default.args },
+  globals: {
+    backgrounds: { value: 'dark' },
+  },
+  render: (args) => {
+    const el = document.createElement('div');
+    el.className = 'ct-theme-dark my-component';
+    el.innerHTML = `<!-- component HTML -->`;
+    return el;
+  },
+};
+```
+
+## Which pattern to use
+
+```
+if no Twig template (CSS-class-only):
+  → Pattern B only
+elif organism or template tier:
+  → Pattern A (theme argType) + Pattern B (separate Dark export)
+else:  # atom or molecule with Twig template
+  → Pattern A only
+```
+
+The primary driver is whether a Twig template exists, not the component tier. A CSS-class-only atom gets Pattern B; an organism gets both patterns (B is additive, not a replacement for the Controls toggle).
+
+## Default export fields
+
+- `title` — Storybook sidebar path (`Atoms/...`, `Molecules/...`, `Organisms/...`).
+- `component` — the imported `.twig` file; the CivicTheme Storybook preset renders it. Omit for CSS-class-only components — use `render` instead.
 - `argTypes` — one entry per prop declared in `.component.yml`. Keys must match prop names exactly.
 
 ## Args map to `.component.yml` props
 
-Every key in `argTypes` (and in a story's `args`) must correspond to a prop in the component's `.component.yml`. If a prop is added or renamed in YAML, update the story to match — otherwise the control renders with no effect.
+Every key in `argTypes` (and in a story's `args`) must match a prop in the component's `.component.yml`. If a prop is added or renamed in YAML, the story must be updated to match — otherwise the control renders with no effect.
 
 ## `argTypes` for enum props
 
@@ -81,19 +184,12 @@ argTypes: {
 
 Use `radio` for 2–3 options; `select` for 4+.
 
-## Named export for the default story
+## SB10 compatibility — do not emit these SB8 patterns
 
-Every story file exports at least one named story alongside the default export:
+| SB8 (broken in SB10) | SB10 (correct) |
+|---|---|
+| `parameters.backgrounds.values: [...]` | `parameters.backgrounds.options: { key: { name, value } }` |
+| `parameters.backgrounds.default: 'Dark'` | `globals: { backgrounds: { value: 'dark' } }` at story level |
+| `import { ... } from '@storybook/preview-api'` | `import { ... } from 'storybook/preview-api'` |
 
-```js
-export const Default = {
-  args: {
-    theme: 'light',
-    vertical_spacing: 'none',
-    with_background: false,
-    title: 'Example card title',
-  },
-};
-```
-
-The `args` object supplies initial values for the controls. Additional named exports (e.g. `Dark`, `WithBackground`) can override specific args to document visual variants.
+If you encounter upstream CivicTheme story files that use the SB8 column, rewrite them to the SB10 column before including them in a sub-theme.
