@@ -140,6 +140,8 @@ else:  # atom or molecule with Twig template
 
 The primary driver is whether a Twig template exists, not the component tier. A CSS-class-only atom gets Pattern B; an organism gets both patterns (B is additive, not a replacement for the Controls toggle).
 
+The only CSS-only components in the upstream CivicTheme base are **Table Sort** and **Summary List** (both atoms). For the full component list and tier assignments, see `references/component-taxonomy.md`.
+
 ## Default export fields
 
 - `title` — Storybook sidebar path (`Atoms/...`, `Molecules/...`, `Organisms/...`).

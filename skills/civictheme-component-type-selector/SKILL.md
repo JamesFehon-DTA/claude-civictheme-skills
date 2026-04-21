@@ -54,6 +54,12 @@ Note: `\Drupal::` static calls are unrestricted on GovCMS SaaS (confirmed phpsta
 
 **Style-first rule:** If the user describes changes that sound structural but a style-only variable override would satisfy the actual need, classify as `style_only_override_existing_civictheme_component` and explain why before proceeding.
 
+## Reference files
+
+Read before classifying:
+
+- `references/component-taxonomy.md` — all CivicTheme components by tier; consult to confirm whether the user's component already exists in the base theme before selecting `new_sdc_component` vs `override_existing_civictheme_component`
+
 ## Output contract
 
 ```yaml
