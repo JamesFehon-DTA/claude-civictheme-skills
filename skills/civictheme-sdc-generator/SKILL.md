@@ -1,6 +1,6 @@
 ---
 name: civictheme-sdc-generator
-description: Generate all files for a new CivicTheme-compatible SDC component inside a Drupal sub-theme. Use when the type-selector returns new_sdc_component, or when the user asks to create a new component, atom, molecule, or organism that doesn't exist in CivicTheme. Always use this skill before civictheme-paragraph-generator when a new component is also needed.
+description: Generate all files for a new CivicTheme-compatible SDC component inside a Drupal sub-theme. Use when the type-selector returns new_sdc_component, or when the user asks to create a new component, atom, molecule, or organism that doesn't exist in CivicTheme. Always use this skill before civictheme-paragraph-generator when a new component is also needed. Skip if the component is portable / self-contained — i.e. declares its own `--[prefix]-*` CSS token namespace, uses `var(--ct-*, #fallback)` with hardcoded fallbacks, and is explicitly designed for multi-site use. Portable components intentionally bypass the CivicTheme mixin system and are out of scope for every CivicTheme skill.
 ---
 
 # CivicTheme SDC Generator

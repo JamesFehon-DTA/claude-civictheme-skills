@@ -1,6 +1,6 @@
 ---
 name: civictheme-override-generator
-description: Generate a full override of an existing CivicTheme SDC component in a Drupal sub-theme. Use when the type-selector returns override_existing_civictheme_component, or when the user needs to replace markup, structure, or behaviour of a base CivicTheme component. Do not use for appearance-only changes — recommend civictheme-style-override instead.
+description: Generate a full override of an existing CivicTheme SDC component in a Drupal sub-theme. Use when the type-selector returns override_existing_civictheme_component, or when the user needs to replace markup, structure, or behaviour of a base CivicTheme component. Do not use for appearance-only changes — recommend civictheme-style-override instead. Skip if the component is portable / self-contained — i.e. declares its own `--[prefix]-*` CSS token namespace, uses `var(--ct-*, #fallback)` with hardcoded fallbacks, and is explicitly designed for multi-site use. Portable components intentionally bypass the CivicTheme mixin system and are out of scope for every CivicTheme skill.
 ---
 
 # CivicTheme Override Generator
