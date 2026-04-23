@@ -50,6 +50,7 @@ Read before generating:
 
 - `references/field-naming.md` — allowed/disallowed field prefixes, linting rules, sub-theme vs CivicTheme namespaces
 - `references/twig-patterns.md` — paragraph template pattern, `only` keyword rationale
+- `references/js-patterns.md` — constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when attaching a JS behaviour to the paragraph)
 - `references/libraries-and-assets.md` — conditional library attachment, SDC CSS auto-loading
 - `references/preprocess-helpers.md` — CivicTheme field helper API, shared preprocess helpers, when `\Drupal::` is appropriate
 - `references/civictheme-field-storage.md` — storage type, cardinality, max length, HTML support, and bundle attachments for every canonical `field_c_p_*` / `field_c_n_*`. Consult before mapping a field to a component prop: if the target prop expects HTML but the field is `string` / `string_long` (e.g. `field_c_p_summary`, `field_c_p_url`), warn the author — the markup will render escaped. Use it to confirm cardinality before deciding the `$multiple` flag on `civictheme_get_field_value()`.

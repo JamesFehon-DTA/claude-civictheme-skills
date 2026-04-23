@@ -55,3 +55,31 @@ Do not use this to ship out-of-sync component pairs — it just defers the failu
 This skill targets SDC-first authoring. Every new component is scaffolded in both `packages/sdc/components/[tier]/[name]/` and `packages/twig/components/[tier]/[name]/` in one pass, with the SDC side as the source of truth. The twig-package output is a bootstrap — `components:update:twig` overwrites it with namespace-transformed, docblock-correct content derived from the SDC source.
 
 The generator's job is to produce a starting pair that survives the first `components:update` run with minimal diff. To do that, the emitted SDC twig docblock must already match the `.component.yml`, the SDC twig must already use `civictheme:` namespaces, and the twig-package twig must already use `@tier/` namespaces for the same includes.
+
+---
+
+## SDC maintainer sync loop — `dist:sdc` → `components:update` → `dist:twig`
+
+When editing an existing component's SCSS or twig (not scaffolding a new one), use the dist-scoped loop rather than the full top-level sync. This is the day-to-day iteration path — faster than the full `components:update:sdc` → `components:update:twig` → `validate` cycle and safe for incremental edits:
+
+| # | Command | Purpose |
+|---|---|---|
+| 1 | `npm run dist:sdc` | Compile SCSS → CSS for the SDC workspace only |
+| 2 | `npm run components:update` | Regenerate SDC docblocks and copy SDC → twig package (runs `components:update:sdc` then `components:update:twig`) |
+| 3 | `npm run dist:twig` | Compile SCSS → CSS for the twig workspace only, producing the files Storybook serves |
+
+Treat this as a first-class workflow, not a shortcut. The full sync loop earlier in this doc is the pre-commit contract; this loop is what you run while iterating on a component. Storybook's HMR does not always pick up SCSS changes in other packages, so `dist:twig` is what actually refreshes the styles the dev server serves.
+
+---
+
+## Storybook viewport presets — avoid the "desktop" preset for breakpoint checks
+
+Storybook's built-in "desktop" viewport preset can resolve to a pixel width below the `l` breakpoint (≥1200px in CivicTheme), depending on the Storybook version and addon-viewport defaults. That means stories previewed under the "desktop" preset may render in the `m` breakpoint range despite the label, masking desktop-only layout bugs.
+
+When verifying breakpoint behaviour, set explicit pixel widths rather than trusting the preset name:
+
+- For `l` breakpoint verification: set the viewport width to 1200px or wider.
+- For `xl` verification: 1440px or wider.
+- Prefer the addon-viewport's custom width controls, or resize the browser window, over selecting the "desktop" preset.
+
+Document the explicit width used when reporting a visual check ("verified at 1280px") — a bare "looks fine on desktop" does not identify which breakpoint range was actually tested.

@@ -32,7 +32,8 @@ The twig-package output is intentionally ephemeral. `components:update:twig` ove
 Read before generating:
 
 - `references/twig-patterns.md` — docblock format, prop validation, class composition, content guard, SDC `civictheme:` vs twig-package `@tier/` namespacing
-- `references/scss-patterns.md` — design system mixins, component-theme pattern, geometry tokens, banned patterns
+- `references/scss-patterns.md` — design system mixins, component-theme pattern, geometry tokens, banned patterns, contextual override scoping, `<fieldset>` and flex gotchas
+- `references/js-patterns.md` — constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when emitting JS behaviour)
 - `references/component-yml-patterns.md` — SDC `.component.yml` schema (including `$schema`), enum values, standard props, sync with the twig docblock
 - `references/storybook-patterns.md` — story file structure for the SDC side; only include when Storybook is confirmed
 - `references/toolchain.md` — canonical sync loop (`components:update:sdc` → `components:update:twig` → `validate`), Husky behaviour, `components:check` semantics

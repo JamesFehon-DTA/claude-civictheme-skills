@@ -1,0 +1,1 @@
+../../_shared/references/js-patterns.md
