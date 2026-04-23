@@ -50,6 +50,22 @@ modifier_class:
 - Atomic level: standalone UI element with no children → atom; composition of atoms → molecule; complex section → organism
 - Storybook story pattern (when Storybook is confirmed): organism/template → Pattern A + Pattern B (theme argType + separate `Dark` export with `globals: { backgrounds: { value: 'dark' } }`); atom/molecule → Pattern A only. SDC always has a Twig template, so the CSS-class-only branch in `references/storybook-patterns.md` does not apply here.
 
+## Variables pipeline — scaffold after emitting SCSS
+
+Every `ct-component-property($root, $theme, …args)` call in the generated component SCSS needs a matching SCSS-variable declaration pair (light + dark) in the sub-theme's `components/variables.components.scss`, otherwise the rendered component has no value to resolve against at runtime.
+
+After generating the component SCSS:
+
+1. Enumerate every `ct-component-property` call you just emitted.
+2. Derive the variable base name from the call: `[component]-[theme]-[joined-path-segments]-[property]`. The component segment is `$root` with the leading `.ct-` stripped; all positional args after `$theme` join with hyphens; the last arg is the CSS property.
+3. Scaffold a block in `components/variables.components.scss` with one declaration per call per theme, using `ct-color-light('token')` / `ct-color-dark('token')` as default values (pick a sensible token name — `typography`, `background-light`, `interactive`, etc. — and let the author refine). For non-colour properties use the appropriate CivicTheme token function (`ct-particle`, `ct-typography-size`, etc.) or a raw value.
+4. Append the block to `components/variables.components.scss` if it exists; create the file if it does not. Do **not** add `!default` — sub-theme values must win.
+5. Include the variables file in the output contract alongside the component files.
+
+**Never write to `00-base/_variables.components.scss`** — that is upstream CivicTheme base content. The custom file is always `components/variables.components.scss` in the sub-theme.
+
+See `references/variables-pipeline.md` for the full flow (`ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export) and examples of how the call shape maps to variable names.
+
 ## Reference files
 
 Read before generating:
@@ -59,6 +75,7 @@ Read before generating:
 - `references/libraries-and-assets.md` — library declaration format, CSS vs JS loading, `components_combined/` rule
 - `references/component-taxonomy.md` — all CivicTheme components by tier; confirms that this is a new component not already present in the base theme
 - `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
+- `references/variables-pipeline.md` — shared flow from `ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export; read before scaffolding the variable block
 - `references/civictheme-field-storage.md` — storage shape of every canonical `field_c_p_*` / `field_c_n_*`. Consult when a component is expected to back a specific CivicTheme field: declare the prop's `type` (`string` vs rich `object`/HTML-bearing) and whether it is single or array-shaped to match the storage. If the intended paragraph field is `string`/`string_long` and your prop expects HTML, either change the prop to plain text or require a custom sub-theme `text_long` field — the base storage will emit escaped markup otherwise.
 
 ## Output contract
@@ -79,6 +96,10 @@ files:
     purpose: component styles
     contents: |
       <full file contents>
+  - path: components/variables.components.scss
+    purpose: per-theme variable declarations matching every ct-component-property call in the component SCSS
+    contents: |
+      <appended block for this component — include surrounding file if creating from scratch, block only if appending>
   - path: [THEME_MACHINE_NAME].libraries.yml  # only if JS requested
     purpose: JS-only library entry
     contents: |

@@ -36,6 +36,7 @@ Read before generating:
 - `references/component-yml-patterns.md` — SDC `.component.yml` schema (including `$schema`), enum values, standard props, sync with the twig docblock
 - `references/storybook-patterns.md` — story file structure for the SDC side; only include when Storybook is confirmed
 - `references/toolchain.md` — canonical sync loop (`components:update:sdc` → `components:update:twig` → `validate`), Husky behaviour, `components:check` semantics
+- `references/variables-pipeline.md` — shared flow from `ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export; read before scaffolding the variable block
 
 ## What to generate
 
@@ -58,7 +59,27 @@ Two packages, one pass.
 | `[name].scss` | Always |
 | ~~`[name].component.yml`~~ | Never — the docblock is the schema in this package |
 
-Do NOT generate: Drupal preprocess hooks, `hook_page_attachments`, `*.libraries.yml`, `*.stories.twig`, or anything outside the two component directories above.
+**Variables (shared) — `packages/sdc/components/variables.components.scss`:**
+
+Append a per-component block declaring the SCSS variables for every `ct-component-property` call in the component SCSS. `components:update:twig` carries the file into the twig package; never write the twig-package copy directly.
+
+Do NOT generate: Drupal preprocess hooks, `hook_page_attachments`, `*.libraries.yml`, `*.stories.twig`, or anything outside the two component directories above (and the shared variables file).
+
+## Variables pipeline — scaffold after emitting SCSS
+
+Every `ct-component-property($root, $theme, …args)` call in the generated component SCSS needs a matching SCSS-variable declaration pair (light + dark) in `packages/sdc/components/variables.components.scss`, otherwise the rendered component has no value to resolve against at runtime.
+
+After generating the component SCSS:
+
+1. Enumerate every `ct-component-property` call you just emitted.
+2. Derive the variable base name from the call: `[component]-[theme]-[joined-path-segments]-[property]`. The component segment is `$root` with the leading `.ct-` stripped; all positional args after `$theme` join with hyphens; the last arg is the CSS property.
+3. Scaffold a block with one declaration per call per theme, using `ct-color-light('token')` / `ct-color-dark('token')` as default values (pick a sensible token name — `typography`, `background-light`, `interactive`, etc. — and let the author refine). For non-colour properties use the appropriate CivicTheme token function (`ct-particle`, `ct-typography-size`, etc.) or a raw value.
+4. Append the block to `packages/sdc/components/variables.components.scss`. Match the surrounding convention for `!default` (upstream base declarations use it; custom additions in the same file typically follow the same convention so sub-themes can still override).
+5. Include the variables file in the output contract alongside the component files.
+
+**Never write to `00-base/_variables.components.scss`** — that is upstream CivicTheme base content. The custom/authoring file is always `components/variables.components.scss` (in `packages/sdc/`). `components:update:twig` syncs it into the twig package; do not write the twig-package copy directly.
+
+See `references/variables-pipeline.md` for the full flow (`ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export) and examples of how the call shape maps to variable names.
 
 ## Out of scope
 
@@ -109,6 +130,10 @@ files:
     purpose: twig-package styles (content matches the SDC file)
     contents: |
       <full file contents>
+  - path: packages/sdc/components/variables.components.scss
+    purpose: per-theme variable declarations matching every ct-component-property call in the component SCSS; synced into packages/twig/ by components:update:twig
+    contents: |
+      <appended block for this component — include surrounding file if creating from scratch, block only if appending>
 post_generation_notes:
   - Run npm run components:update:sdc to regenerate authoritative SDC twig docblocks from .component.yml.
   - Run npm run components:update:twig to regenerate packages/twig/ from the SDC source — this overwrites the bootstrap twig-package files, and is intentional.
