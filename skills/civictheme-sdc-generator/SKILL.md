@@ -72,6 +72,7 @@ Read before generating:
 
 - `references/component-yml-patterns.md` — full `.component.yml` schema, prop types, slots, SDC loading notes
 - `references/twig-patterns.md` — prop validation, class construction, `only` keyword, ARIA patterns, data-attribute selectors
+- `references/js-patterns.md` — constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when emitting JS behaviour)
 - `references/libraries-and-assets.md` — library declaration format, CSS vs JS loading, `components_combined/` rule
 - `references/component-taxonomy.md` — all CivicTheme components by tier; confirms that this is a new component not already present in the base theme
 - `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)

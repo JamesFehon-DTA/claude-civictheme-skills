@@ -199,3 +199,40 @@ once('[theme]-[name]', '[data-[name]]', context).forEach(function (el) {
 | CivicTheme base components | `civictheme:component-name` |
 | New sub-theme components | `[THEME_MACHINE_NAME]:component-name` |
 | Sub-theme overrides | `civictheme:component-name` (Drupal routes to the override automatically) |
+
+## Runtime Gotchas
+
+### `{{ _self.macro_name() }}` renders empty in Storybook
+
+The Storybook twig.js runtime does not implement `_self` the way Twig does in Drupal — calls like `{{ _self.item(...) }}` or `{% import _self as helpers %}` silently render empty. This only surfaces in Storybook; the same template works in Drupal.
+
+Do not use `_self` macros in component templates. Inline the loop or conditional instead:
+
+```twig
+{# Wrong — renders empty in Storybook #}
+{% macro render_item(item) %}
+  <li class="ct-[name]__item">{{ item.title }}</li>
+{% endmacro %}
+
+{% for item in items %}
+  {{ _self.render_item(item) }}
+{% endfor %}
+
+{# Right — inline, runs the same in Drupal and Storybook #}
+{% for item in items %}
+  <li class="ct-[name]__item">{{ item.title }}</li>
+{% endfor %}
+```
+
+If a helper is genuinely reused across templates, extract it into a separate `.twig` partial and `include` it — that resolves correctly in both runtimes.
+
+### `namespace()` is not available under twig-drupal
+
+The `namespace()` function from `drupal/core` Twig helpers (used to resolve a module/theme path at render time) is not registered in the twig-drupal runtime that Storybook and the UIKit twig package use. Calls like `{{ namespace('theme_name') ~ '/path' }}` throw `Unknown "namespace" function`.
+
+For component-internal asset paths, prefer:
+
+- Relative paths from the component file (`./[name].svg`), which both Drupal and Storybook resolve against the component directory.
+- Twig variables passed in by the caller (`{{ icon_path }}`), populated from preprocess in Drupal and from story args in Storybook.
+
+Reserve `namespace()` for preprocess hooks and module/theme PHP — not component templates.
