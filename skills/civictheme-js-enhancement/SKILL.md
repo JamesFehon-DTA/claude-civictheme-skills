@@ -37,6 +37,51 @@ Enhancements **extend** CivicTheme — they do not override it. Files ship as pl
 Read before generating:
 
 - `references/libraries-and-assets.md` — library declaration format, `components_combined/` rule, global vs conditional attachment, CSS weight and preprocessing options
+- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before emitting any DOM mutation that changes ARIA attributes, link state, or adds/removes interactive markup.
+
+## Accessibility — enforced at generation
+
+Enhancements mutate existing CivicTheme markup at runtime — getting the ARIA/link/icon rules wrong silently breaks AT announcements. Emit these JS patterns inline, with their citing comments intact:
+
+```js
+// a11y #A: disabled link — flip aria-disabled, tabindex, and href together.
+// Never set the disabled property on an <a>. See references/accessibility.md.
+function setLinkDisabled(link, disabled) {
+  if (disabled) {
+    link.setAttribute('aria-disabled', 'true');
+    link.setAttribute('tabindex', '-1');
+    link.dataset.ctHref = link.getAttribute('href') || '';
+    link.removeAttribute('href');
+  } else {
+    link.removeAttribute('aria-disabled');
+    link.removeAttribute('tabindex');
+    if (link.dataset.ctHref) { link.setAttribute('href', link.dataset.ctHref); }
+  }
+}
+
+// a11y #B: new-tab notice — append a visually-hidden span, don't set aria-label.
+// aria-label="Opens in a new tab" REPLACES the link's accessible name. Never use it.
+function appendNewTabNotice(link) {
+  if (link.querySelector('.ct-visually-hidden[data-ct-new-tab]')) return;
+  var notice = document.createElement('span');
+  notice.className = 'ct-visually-hidden';
+  notice.dataset.ctNewTab = '';
+  notice.textContent = ' (opens in a new tab)';
+  link.appendChild(notice);
+}
+
+// a11y #C: decorative icons injected at runtime must be aria-hidden.
+// Meaningful (icon-only) controls need a visually-hidden label on the parent instead.
+function injectDecorativeIcon(host, svgMarkup) {
+  var span = document.createElement('span');
+  span.className = 'ct-[name]__icon';
+  span.setAttribute('aria-hidden', 'true');
+  span.innerHTML = svgMarkup;
+  host.appendChild(span);
+}
+```
+
+Enhancement CSS that styles a disabled-link state must key on `[aria-disabled="true"]`, never `:disabled` — anchors do not match `:disabled`. See rule #A in `references/accessibility.md`.
 
 ## Output contract
 

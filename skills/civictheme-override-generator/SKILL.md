@@ -69,6 +69,34 @@ Read before generating:
 - `references/field-naming.md` — field prefix rules for any custom fields added to the override
 - `references/component-taxonomy.md` — tier and CSS-only status for all CivicTheme components; use to determine the component's atomic tier and whether it is CSS-only (both affect story pattern selection)
 - `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml`, Pattern A vs B selection (optional — only if Storybook is present)
+- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before reworking interactive markup or ARIA attributes in an override.
+
+## Accessibility — enforced at generation
+
+Overrides that rework link-shaped controls, new-tab markup, or icon structure must emit the correct a11y pattern. If the base template already follows the rule, preserve it verbatim; if the base template is being replaced, inline the patterns below and keep the comments citing `references/accessibility.md`:
+
+```twig
+{# a11y #A: disabled link — aria-disabled + tabindex="-1" + omit href.
+   Never emit `disabled` on <a>. See references/accessibility.md. #}
+{% if is_disabled %}
+  <a class="ct-[name]" aria-disabled="true" tabindex="-1">{{ label }}</a>
+{% else %}
+  <a class="ct-[name]" href="{{ url }}">{{ label }}</a>
+{% endif %}
+
+{# a11y #B: new-tab notice — append via visually-hidden span.
+   Never replace the accessible name with aria-label="Opens in a new tab". #}
+<a href="{{ url }}" target="_blank" rel="noopener noreferrer">
+  {{ label }}<span class="ct-visually-hidden"> (opens in a new tab)</span>
+</a>
+
+{# a11y #C: decorative icon — aria-hidden on the wrapping span so AT does not double-announce. #}
+<span class="ct-[name]__icon" aria-hidden="true">
+  {% include 'civictheme:icon' with { symbol: icon_name, size: 'small' } only %}
+</span>
+```
+
+If the override also reworks JS that toggles link state, flip `aria-disabled`, `tabindex`, and `href` together — never touch `.disabled` on an `<a>`. See rule #A in `references/accessibility.md`.
 
 ## Output contract
 
