@@ -8,12 +8,16 @@ A modular repository of Claude skills designed for deterministic CivicTheme comp
 This repository utilizes a distributed architecture to avoid monolithic skill decay and ensure single-responsibility logic.
 
 * **Router (Entry Point):** `civictheme-component-type-selector` orchestrates intent and directs the session to the appropriate handler.
-* **Handlers:**
+* **Handlers (routed via the type-selector):**
     * **SDC Generator:** For new Single Directory Components.
     * **Override Generator:** For sub-theme component overrides.
     * **Style Override:** Focuses on SCSS variable architecture.
     * **JS Enhancement:** Manages behavior and library overrides.
     * **Paragraph Generator:** Specifically for Drupal paragraph integration.
+* **Direct-entry skills (not routed via the type-selector):**
+    * **UIKit Component Generator:** SDC-first authoring for CivicTheme UIKit / design-system repos — generates `packages/sdc/` and `packages/twig/` in one pass. Entry point for UIKit work.
+    * **UIKit SCSS Iteration:** SCSS edits to existing UIKit components (spacing, colour, layout, selector-scoped overrides). Entry point for UIKit iteration.
+    * **Health Check:** Diagnostics pass — lint + validate + a11y anti-pattern grep, consolidated into one report. Entry point for a status/sanity check.
 
 ## Shared Reference Patterns
 
@@ -41,11 +45,16 @@ Skills were created by referencing CivicTheme technical facts:
 ```
 skills/
   civictheme-component-type-selector/SKILL.md   ← router
-  civictheme-sdc-generator/                     ← handler
-  civictheme-override-generator/                ← handler
-  civictheme-style-override/                    ← handler
-  civictheme-js-enhancement/                    ← handler
-  civictheme-paragraph-generator/               ← handler
+  civictheme-sdc-generator/                     ← handler (routed)
+  civictheme-override-generator/                ← handler (routed)
+  civictheme-style-override/                    ← handler (routed)
+  civictheme-js-enhancement/                    ← handler (routed)
+  civictheme-paragraph-generator/               ← handler (routed)
+
+  civictheme-uikit-component-generator/         ← direct entry (UIKit authoring)
+  civictheme-uikit-scss-iteration/              ← direct entry (UIKit SCSS edits)
+  civictheme-health-check/                      ← direct entry (diagnostics)
+
   _shared/references/                           ← canonical shared refs
 templates/
   consumer-sub-theme-claude-md.md               ← paste into Drupal sub-theme CLAUDE.md
@@ -97,7 +106,7 @@ For a global install that applies to every project on the machine, link into `~/
 
 ### Claude Desktop (parallel `.skill` uploads) — for users not on Claude Code
 
-Tagged releases ship prebuilt `.skill` archives on the repository's GitHub Releases page — download all attached files and upload them to your Desktop project's skill knowledge. There are seven archives (one per skill: the router plus six handlers).
+Tagged releases ship prebuilt `.skill` archives on the repository's GitHub Releases page — download all attached files and upload them to your Desktop project's skill knowledge. There are nine archives (one per skill: the router, five routed handlers, and three direct-entry skills).
 
 To build the archives locally (for contributing or installing from an untagged commit):
 
