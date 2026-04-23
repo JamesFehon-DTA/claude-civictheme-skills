@@ -1,6 +1,6 @@
 ---
 name: civictheme-component-type-selector
-description: Use this skill whenever the user mentions creating, overriding, or styling any CivicTheme component, adding JS/CSS behaviour to a CivicTheme sub-theme, or creating a paragraph or content element. This is the required entry point — always classify before generating. Also triggers for "create a component", "override a component", "style a component", "scaffold a component", "add a paragraph type", "create a content element", "add sortable table", "add filterable table", "add JS enhancement", or any mention of CivicTheme SDC work. Handles Drupal sub-theme work only — not UIKit source authoring. For authoring new components in the CivicTheme UIKit, design system, design library, or component library itself, redirect to civictheme-uikit-component-generator instead.
+description: Use this skill whenever the user mentions creating, overriding, or styling any CivicTheme component, adding JS/CSS behaviour to a CivicTheme sub-theme, or creating a paragraph or content element. This is the required entry point — always classify before generating. Also triggers for "create a component", "override a component", "style a component", "scaffold a component", "add a paragraph type", "create a content element", "add sortable table", "add filterable table", "add JS enhancement", or any mention of CivicTheme SDC work. Handles Drupal sub-theme work only — not UIKit source authoring. For authoring new components in the CivicTheme UIKit, design system, design library, or component library itself, redirect to civictheme-uikit-component-generator instead. For modifying the SCSS of an existing UIKit component (spacing, colour, layout, selector-scoped overrides), redirect to civictheme-uikit-scss-iteration.
 ---
 
 # CivicTheme Component Type Selector
@@ -34,7 +34,9 @@ Note: `\Drupal::` static calls are unrestricted on GovCMS SaaS (confirmed phpsta
 
 ## Out of scope — redirect immediately
 
-**UIKit source authoring** — user wants to add a component to the CivicTheme UIKit, design system, design library, or component library itself, not to a Drupal sub-theme. Redirect to `civictheme-uikit-component-generator`. Do not classify further.
+**UIKit source authoring (new components)** — user wants to add a component to the CivicTheme UIKit, design system, design library, or component library itself, not to a Drupal sub-theme. Redirect to `civictheme-uikit-component-generator`. Do not classify further.
+
+**UIKit SCSS iteration (existing components)** — user wants to modify the SCSS of an existing UIKit component (spacing, colour, flex/grid layout, selector-scoped overrides on a sub-component inside a parent). Redirect to `civictheme-uikit-scss-iteration`. Do not classify further. The distinguishing signal is that the component already exists in `packages/sdc/components/`; the edit is to one of its `.scss` files, not a Drupal sub-theme override.
 
 **Portable / self-contained components** — components with their own CSS token namespace (`--[prefix]-*`), hardcoded fallbacks alongside CivicTheme token references, and explicit multi-site portability intent. These intentionally bypass the CivicTheme mixin system and are not UIKit components. No skill covers them — tell the user they are out of scope.
 
