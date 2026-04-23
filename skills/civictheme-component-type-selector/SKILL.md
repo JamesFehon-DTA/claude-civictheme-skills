@@ -34,11 +34,18 @@ Note: `\Drupal::` static calls are unrestricted on GovCMS SaaS (confirmed phpsta
 
 ## Out of scope — redirect immediately
 
-**UIKit source authoring (new components)** — user wants to add a component to the CivicTheme UIKit, design system, design library, or component library itself, not to a Drupal sub-theme. Redirect to `civictheme-uikit-component-generator`. Do not classify further.
+Three skills in this repo are deliberate direct-entry points. They are NOT part of the five-pattern classifier and must not appear in `recommended_next_skill`. When the user's intent matches one, exit the selector immediately — do not classify further — and name the skill explicitly.
 
-**UIKit SCSS iteration (existing components)** — user wants to modify the SCSS of an existing UIKit component (spacing, colour, flex/grid layout, selector-scoped overrides on a sub-component inside a parent). Redirect to `civictheme-uikit-scss-iteration`. Do not classify further. The distinguishing signal is that the component already exists in `packages/sdc/components/`; the edit is to one of its `.scss` files, not a Drupal sub-theme override.
+**UIKit source authoring (new components)** — user wants to add a component to the CivicTheme UIKit, design system, design library, or component library itself, not to a Drupal sub-theme. Redirect to `civictheme-uikit-component-generator`.
+- *Why direct entry:* UIKit authoring is SDC-first against `packages/sdc/` + `packages/twig/` and uses a different output contract from the sub-theme generators. Routing through the classifier would collapse the two contracts.
 
-**Portable / self-contained components** — components with their own CSS token namespace (`--[prefix]-*`), hardcoded fallbacks alongside CivicTheme token references, and explicit multi-site portability intent. These intentionally bypass the CivicTheme mixin system and are not UIKit components. No skill covers them — tell the user they are out of scope.
+**UIKit SCSS iteration (existing components)** — user wants to modify the SCSS of an existing UIKit component (spacing, colour, flex/grid layout, selector-scoped overrides on a sub-component inside a parent). Redirect to `civictheme-uikit-scss-iteration`. The distinguishing signal is that the component already exists in `packages/sdc/components/`; the edit is to one of its `.scss` files, not a Drupal sub-theme override.
+- *Why direct entry:* Operates on UIKit source, not sub-theme overrides, and uses the `dist:sdc` → `components:update` → `dist:twig` iteration loop. Sub-theme style patterns do not apply.
+
+**Diagnostics / health check** — user wants a status or sanity report rather than a component change (phrases like "run the checks", "validate the theme", "health-check the repo", "sanity pass before commit"). Redirect to `civictheme-health-check`.
+- *Why direct entry:* Diagnostics is not a component-pattern handler. It runs a fixed pipeline (lint → validate → theme-variable-usage → a11y grep) across the whole project and does not produce a component. There is no meaningful classification to perform.
+
+**Portable / self-contained components** — components with their own CSS token namespace (`--[prefix]-*`), hardcoded fallbacks alongside CivicTheme token references, and explicit multi-site portability intent. These intentionally bypass the CivicTheme mixin system and are not UIKit components. No skill covers them — tell the user they are out of scope. See `memory/portable_vs_uikit_components.md` for the full boundary definition.
 
 Signals that distinguish portable from UIKit/sub-theme work:
 - Own `--prefix-*` token namespace declared in SCSS
@@ -48,13 +55,14 @@ Signals that distinguish portable from UIKit/sub-theme work:
 
 ---
 
-## Five component patterns
+## Six component patterns
 
 | Pattern | When to use |
 |---|---|
 | `new_sdc_component` | Brand-new UI not present in CivicTheme |
 | `override_existing_civictheme_component` | Replace markup, structure, or behaviour of an existing CivicTheme component |
-| `style_only_override_existing_civictheme_component` | Change appearance only — colour, spacing, typography; no markup changes |
+| `style_only_override_existing_civictheme_component` | Change appearance of a specific component — colour, spacing, typography on that component only; no markup changes |
+| `variable_tokens_only` | Change base design tokens (palette colours, spacing scale, typography ramp) that apply project-wide; no component override needed |
 | `js_css_enhancement_without_sdc_component` | Add JS/CSS behaviour to existing markup; no new SDC |
 | `paragraph_or_content_element_using_civictheme_component` | Drupal content-authoring pattern wrapping an SDC component |
 
@@ -62,13 +70,16 @@ Signals that distinguish portable from UIKit/sub-theme work:
 
 1. New UI pattern not present in CivicTheme → `new_sdc_component`
 2. Change markup, structure, or logic of an existing component → `override_existing_civictheme_component`
-3. Change appearance only (colour, spacing, border, typography) → `style_only_override_existing_civictheme_component`
-4. Add JS/CSS to existing markup without creating an SDC → `js_css_enhancement_without_sdc_component`
-5. Drupal content authoring pattern wrapping an SDC component → `paragraph_or_content_element_using_civictheme_component`
-6. Ambiguous → ask exactly one question: "Are you changing markup/behaviour, appearance only, or creating a new authoring pattern?"
-7. User is on GovCMS SaaS and reaches for a custom module → redirect to the equivalent theme-layer pattern above; custom modules are unavailable on SaaS.
+3. Change the appearance of a specific component (its colour, spacing, border, typography) → `style_only_override_existing_civictheme_component`
+4. Change base tokens only — palette, spacing scale, typography ramp — with no component-scoped override needed → `variable_tokens_only`
+5. Add JS/CSS to existing markup without creating an SDC → `js_css_enhancement_without_sdc_component`
+6. Drupal content authoring pattern wrapping an SDC component → `paragraph_or_content_element_using_civictheme_component`
+7. Ambiguous → ask exactly one question: "Are you changing markup/behaviour, appearance only, or creating a new authoring pattern?"
+8. User is on GovCMS SaaS and reaches for a custom module → redirect to the equivalent theme-layer pattern above; custom modules are unavailable on SaaS.
 
 **Style-first rule:** If the user describes changes that sound structural but a style-only variable override would satisfy the actual need, classify as `style_only_override_existing_civictheme_component` and explain why before proceeding.
+
+**Tokens vs component-scoped styling:** `variable_tokens_only` is reserved for *base-token* edits — changes to the project's colour palette, spacing scale, or typography ramp that ripple through every component that consumes those tokens. Use `style_only_override_existing_civictheme_component` when the appearance change is scoped to a specific component (even if implemented via variable overrides in that component's scope). The discriminator is "base tokens, zero component override needed" vs "this component looks different". Both route to `civictheme-style-override`, but the classifier must distinguish them so the downstream skill writes to the correct layer.
 
 ## Reference files
 
@@ -87,7 +98,7 @@ These skills are **not** part of the five-pattern classifier and do not appear i
 ## Output contract
 
 ```yaml
-component_pattern: <new_sdc_component | override_existing_civictheme_component | style_only_override_existing_civictheme_component | js_css_enhancement_without_sdc_component | paragraph_or_content_element_using_civictheme_component>
+component_pattern: <new_sdc_component | override_existing_civictheme_component | style_only_override_existing_civictheme_component | variable_tokens_only | js_css_enhancement_without_sdc_component | paragraph_or_content_element_using_civictheme_component>
 reason: <one sentence>
 project_context:
   theme_machine_name: <[THEME_MACHINE_NAME]>
