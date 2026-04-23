@@ -83,6 +83,18 @@ def check_skill(skill_dir: Path, errors: list[str]) -> None:
 
 
 def check_router(errors: list[str]) -> None:
+    # Invariant: the router's SKILL.md must mention every skill directory by name,
+    # so no handler becomes an orphan. Three skills are deliberately *not* routed
+    # through the type-selector — they are direct entry points, named only in the
+    # router's §Out of scope / §Related skills exit notes:
+    #   - civictheme-uikit-component-generator (UIKit authoring)
+    #   - civictheme-uikit-scss-iteration      (UIKit SCSS edits)
+    #   - civictheme-health-check              (diagnostics)
+    # Because this check is a plain substring search over the whole SKILL.md,
+    # those exit-note mentions satisfy the invariant without making the skills
+    # part of `recommended_next_skill`. If a future refactor narrows the check
+    # to routing-table or enum membership, introduce an allowlist for these
+    # three skills rather than forcing them into the classifier enum.
     if not ROUTER.exists():
         errors.append(f"{ROUTER}: missing")
         return
