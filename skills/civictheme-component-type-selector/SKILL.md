@@ -76,6 +76,14 @@ Read before classifying:
 
 - `references/component-taxonomy.md` — all CivicTheme components by tier; consult to confirm whether the user's component already exists in the base theme before selecting `new_sdc_component` vs `override_existing_civictheme_component`
 
+## Related skills — diagnostics and UIKit iteration
+
+These skills are **not** part of the five-pattern classifier and do not appear in `recommended_next_skill`. They exit the selector early, with or without classification. Name them explicitly when the user's intent matches, instead of forcing a classification that does not fit.
+
+- **`civictheme-health-check`** — diagnostics pass (lint → validate → theme-variable-usage check → a11y anti-pattern grep) that produces a consolidated report. Works in both sub-theme and UIKit contexts. Route here when the user asks to "run the checks", "validate the theme", "health-check the repo", "sanity pass before commit", or otherwise wants a status report rather than a component change. It is not a component-pattern handler — do not attempt to classify; redirect.
+- **`civictheme-uikit-scss-iteration`** — SCSS edits on existing UIKit components (also named in §Out of scope above). Route here when the user wants to adjust spacing, colour, typography, flex/grid layout, or selector-scoped overrides on a component that already exists in `packages/sdc/components/`.
+- **`civictheme-uikit-component-generator`** — authoring a new UIKit component (also named in §Out of scope above). Route here when the user wants to add a brand-new component to `packages/sdc/` / `packages/twig/`.
+
 ## Output contract
 
 ```yaml
