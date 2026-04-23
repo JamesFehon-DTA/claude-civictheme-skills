@@ -2,7 +2,9 @@
 
 Canonical references:
 - `packages/sdc/components/01-atoms/label/label.scss` — typography iteration, full theme pattern
-- `packages/twig/components/02-molecules/accordion/accordion.scss` — breakpoints, geometry tokens, nested theme
+- `packages/sdc/components/02-molecules/accordion/accordion.scss` — breakpoints, geometry tokens, nested theme
+
+SCSS content is identical across `packages/sdc/` and `packages/twig/`. Emit the same file body to both packages; `components:update:twig` keeps them aligned thereafter.
 
 ---
 

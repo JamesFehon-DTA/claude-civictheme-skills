@@ -1,7 +1,11 @@
 # Twig Authoring Patterns
 
-Canonical reference: `packages/twig/components/01-atoms/label/label.twig`
-Secondary reference: `packages/twig/components/02-molecules/accordion/accordion.twig`
+Canonical references:
+- `packages/sdc/components/01-atoms/label/label.twig` — SDC source of truth, `civictheme:` namespaces
+- `packages/sdc/components/02-molecules/accordion/accordion.twig` — SDC molecule with includes
+- `packages/twig/components/02-molecules/accordion/accordion.twig` — post-sync derivative, `@tier/` namespaces
+
+The twig patterns below apply to both packages. **Include namespaces are the key difference** — author SDC files with `civictheme:` and twig-package bootstrap files with `@tier/`. The `components:update:twig` sync performs this transform automatically; the generator emits both forms so the twig package is immediately buildable.
 
 ---
 
@@ -35,7 +39,9 @@ Every file opens with a `{# ... #}` docblock. Never use HTML comments (`<!-- -->
 - List every prop with `[type]` annotation
 - Omit Slots / Blocks sections if the component has none
 - Array props list their child properties indented under them (see accordion pattern)
-- The docblock prop list and the `.component.yml` props must describe the same set
+- The docblock prop list, the SDC `.component.yml` props, and the post-sync twig-package docblock must all describe the same set
+
+The SDC `.component.yml` is the authoritative schema. `components:update:sdc` rewrites the SDC twig docblock from that schema; `components:update:twig` then propagates it to the twig package. Keep the generator's hand-written docblock in sync with the `.component.yml` so the first sync produces a no-op diff.
 
 ---
 
@@ -109,9 +115,21 @@ Always include on the root element. Never omit.
 
 ---
 
-## Including sub-components
+## Including sub-components — two namespacings, one component
 
-Use path-based `@tier/` namespaces — not `civictheme:` namespaces (those are the SDC package convention).
+Include namespaces differ by package. The generator emits both forms and `components:update:twig` keeps them in sync thereafter.
+
+**SDC (`packages/sdc/`) — use `civictheme:` namespaces:**
+
+```twig
+{% include 'civictheme:paragraph' with {
+  theme: theme,
+  content: panel.content,
+  modifier_class: 'ct-[component]__inner',
+} only %}
+```
+
+**Twig package (`packages/twig/`) — use `@tier/` namespaces:**
 
 ```twig
 {% include '@atoms/paragraph/paragraph.twig' with {
@@ -121,13 +139,14 @@ Use path-based `@tier/` namespaces — not `civictheme:` namespaces (those are t
 } only %}
 ```
 
-Tier namespace mapping:
+Tier namespace mapping for the twig package:
+
 - `01-atoms` → `@atoms/`
 - `02-molecules` → `@molecules/`
 - `03-organisms` → `@organisms/`
 - `04-templates` → `@templates/`
 
-Always pass `only` to prevent variable leakage.
+Always pass `only` to prevent variable leakage in either package.
 
 ---
 
@@ -172,6 +191,7 @@ Atoms and molecules do not use this wrapper.
 | `<!-- HTML comment -->` | `{# Twig comment #}` |
 | `\|raw` filter | Render content directly — `\|raw` removed in UIKit 1.12.2+ |
 | `{% extends %}` | Full replacement only — unsupported from 1.11.0 onward |
-| `civictheme:label` namespace | `@atoms/label/label.twig` |
 | `~` string concatenation | `'%s %s'\|format(a, b)` |
 | Hardcoded placeholder text | Twig variables |
+| `civictheme:` in `packages/twig/` | `@tier/` path-based namespace |
+| `@tier/` in `packages/sdc/` | `civictheme:` namespace |
