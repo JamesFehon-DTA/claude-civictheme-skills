@@ -4,6 +4,8 @@ Authoritative, repo-wide a11y rules for every skill that emits or mutates intera
 
 All rules here are **enforced at generation** — generators must emit the correct pattern in the first place rather than relying on downstream review.
 
+This is the current curated set. Add new rules here as they are confirmed in practice — pick the next free letter (#D, #E, …) and match the shape of #A–#C. Generators cite by rule letter, so extending this file is cheaper than editing every SKILL.md.
+
 ---
 
 ## Rule A — never emit `disabled` on `<a>`
