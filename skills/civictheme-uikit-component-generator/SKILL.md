@@ -130,6 +130,7 @@ files:
     purpose: twig-package styles (content matches the SDC file)
     contents: |
       <full file contents>
+  # Do NOT also write packages/twig/components/variables.components.scss — the twig package is a generated derivative of SDC, and components:update:twig will overwrite any hand-written copy.
   - path: packages/sdc/components/variables.components.scss
     purpose: per-theme variable declarations matching every ct-component-property call in the component SCSS; synced into packages/twig/ by components:update:twig
     contents: |
