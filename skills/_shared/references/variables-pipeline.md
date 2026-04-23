@@ -83,7 +83,9 @@ $ct-[component]-light-[path-]-[property]: ct-color-light('[token-name]');
 $ct-[component]-dark-[path-]-[property]: ct-color-dark('[token-name]');
 ```
 
-`ct-color-light('token')` and `ct-color-dark('token')` resolve a named colour from the active palette for the given theme. Common token names include `typography`, `background-light`, `background-dark`, `interactive`, `focus`, `border-light`, `border-dark` — the full set is defined by the design palette the theme consumes. Pick a sensible default and let the author refine.
+`ct-color-light('token')` and `ct-color-dark('token')` resolve a named colour from the active palette for the given theme.
+
+**Read `00-base/_variables.colors.scss` before generating.** The token names shown anywhere in this reference are illustrative of the naming *shape*, not an authoritative palette — upstream CivicTheme ships new tokens per version, and a name that exists in 1.11 may be renamed, split, or removed by 1.12. Treat examples like `typography`, `background-light`, `interactive` as a shape-template for what a token identifier looks like, then pick an actual token from the version-specific palette file. If the palette file for the current version is unavailable at generation time, emit a sensibly-shaped name and flag it in the output for the author to reconcile against the real palette.
 
 Do **not** include `!default` when these declarations are emitted into the sub-theme's custom file — the sub-theme imports before the base, so a bare assignment wins. In an upstream UIKit component the base declarations do use `!default` so sub-themes can override them; match the surrounding convention of the file you are writing into.
 

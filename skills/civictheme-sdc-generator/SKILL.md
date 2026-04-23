@@ -96,6 +96,7 @@ files:
     purpose: component styles
     contents: |
       <full file contents>
+  # Do NOT write 00-base/_variables.components.scss — that path is upstream CivicTheme base content. The custom file is always components/variables.components.scss in the sub-theme.
   - path: components/variables.components.scss
     purpose: per-theme variable declarations matching every ct-component-property call in the component SCSS
     contents: |
