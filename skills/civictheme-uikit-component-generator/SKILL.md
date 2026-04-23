@@ -38,6 +38,34 @@ Read before generating:
 - `references/storybook-patterns.md` — story file structure for the SDC side; only include when Storybook is confirmed
 - `references/toolchain.md` — canonical sync loop (`components:update:sdc` → `components:update:twig` → `validate`), Husky behaviour, `components:check` semantics
 - `references/variables-pipeline.md` — shared flow from `ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export; read before scaffolding the variable block
+- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before emitting any interactive markup or ARIA attributes in either package.
+
+## Accessibility — enforced at generation
+
+Emit these patterns in the SDC `.twig` (source of truth); `components:update:twig` carries them into the twig package unchanged. Keep the inline comments so maintainers can trace each rule back to `references/accessibility.md`:
+
+```twig
+{# a11y #A: disabled link — aria-disabled + tabindex="-1" + omit href.
+   Never emit `disabled` on <a>. See references/accessibility.md. #}
+{% if is_disabled %}
+  <a class="ct-[name]" aria-disabled="true" tabindex="-1">{{ label }}</a>
+{% else %}
+  <a class="ct-[name]" href="{{ url }}">{{ label }}</a>
+{% endif %}
+
+{# a11y #B: new-tab notice — append via visually-hidden span.
+   Never replace the accessible name with aria-label="Opens in a new tab". #}
+<a href="{{ url }}" target="_blank" rel="noopener noreferrer">
+  {{ label }}<span class="ct-visually-hidden"> (opens in a new tab)</span>
+</a>
+
+{# a11y #C: decorative icon — aria-hidden on the wrapping span so AT does not double-announce. #}
+<span class="ct-[name]__icon" aria-hidden="true">
+  {% include 'civictheme:icon' with { symbol: icon_name, size: 'small' } only %}
+</span>
+```
+
+SCSS that styles a disabled-link state should key on `[aria-disabled="true"]`, not `:disabled` — `<a>` never matches `:disabled`. See rule #A in `references/accessibility.md`.
 
 ## What to generate
 

@@ -54,6 +54,34 @@ Read before generating:
 - `references/libraries-and-assets.md` — conditional library attachment, SDC CSS auto-loading
 - `references/preprocess-helpers.md` — CivicTheme field helper API, shared preprocess helpers, when `\Drupal::` is appropriate
 - `references/civictheme-field-storage.md` — storage type, cardinality, max length, HTML support, and bundle attachments for every canonical `field_c_p_*` / `field_c_n_*`. Consult before mapping a field to a component prop: if the target prop expects HTML but the field is `string` / `string_long` (e.g. `field_c_p_summary`, `field_c_p_url`), warn the author — the markup will render escaped. Use it to confirm cardinality before deciding the `$multiple` flag on `civictheme_get_field_value()`.
+- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read when the paragraph template emits link-shaped controls, new-tab links, or decorative icon markup directly rather than delegating to the SDC include.
+
+## Accessibility — enforced at generation
+
+Paragraph templates are usually thin wrappers that `include` an SDC component — the component owns the a11y pattern. But when the paragraph emits its own anchor, new-tab link, or icon markup (e.g. an author-supplied "read more" link rendered in the paragraph template itself), inline these patterns with their citing comments:
+
+```twig
+{# a11y #A: disabled link — aria-disabled + tabindex="-1" + omit href.
+   Never emit `disabled` on <a>. See references/accessibility.md. #}
+{% if is_disabled %}
+  <a class="ct-[name]" aria-disabled="true" tabindex="-1">{{ label }}</a>
+{% else %}
+  <a class="ct-[name]" href="{{ url }}">{{ label }}</a>
+{% endif %}
+
+{# a11y #B: new-tab notice — append via visually-hidden span.
+   Never replace the accessible name with aria-label="Opens in a new tab". #}
+<a href="{{ url }}" target="_blank" rel="noopener noreferrer">
+  {{ label }}<span class="ct-visually-hidden"> (opens in a new tab)</span>
+</a>
+
+{# a11y #C: decorative icon — aria-hidden on the wrapping span so AT does not double-announce. #}
+<span class="ct-[name]__icon" aria-hidden="true">
+  {% include 'civictheme:icon' with { symbol: icon_name, size: 'small' } only %}
+</span>
+```
+
+When the paragraph passes a link field into a CivicTheme SDC component, prefer the component's built-in new-tab handling (`is_new_window: link.is_new_window`) over assembling the anchor manually — the base component already implements rule #B correctly.
 
 ## Output contract
 

@@ -78,6 +78,34 @@ Read before generating:
 - `references/storybook-patterns.md` — story file structure, args/argTypes mapping from `.component.yml` (optional — only if Storybook is present)
 - `references/variables-pipeline.md` — shared flow from `ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export; read before scaffolding the variable block
 - `references/civictheme-field-storage.md` — storage shape of every canonical `field_c_p_*` / `field_c_n_*`. Consult when a component is expected to back a specific CivicTheme field: declare the prop's `type` (`string` vs rich `object`/HTML-bearing) and whether it is single or array-shaped to match the storage. If the intended paragraph field is `string`/`string_long` and your prop expects HTML, either change the prop to plain text or require a custom sub-theme `text_long` field — the base storage will emit escaped markup otherwise.
+- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before emitting any interactive markup or ARIA attributes.
+
+## Accessibility — enforced at generation
+
+Emit these patterns inline when the component produces link-shaped controls, new-tab links, or decorative icons. Keep the inline comments in the generated `.twig` — they cite `references/accessibility.md` so downstream maintainers know which rule applies:
+
+```twig
+{# a11y #A: disabled link — aria-disabled + tabindex="-1" + omit href.
+   Never emit `disabled` on <a>. See references/accessibility.md. #}
+{% if is_disabled %}
+  <a class="ct-[name]" aria-disabled="true" tabindex="-1">{{ label }}</a>
+{% else %}
+  <a class="ct-[name]" href="{{ url }}">{{ label }}</a>
+{% endif %}
+
+{# a11y #B: new-tab notice — append via visually-hidden span.
+   Never replace the accessible name with aria-label="Opens in a new tab". #}
+<a href="{{ url }}" target="_blank" rel="noopener noreferrer">
+  {{ label }}<span class="ct-visually-hidden"> (opens in a new tab)</span>
+</a>
+
+{# a11y #C: decorative icon — aria-hidden on the wrapping span so AT does not double-announce. #}
+<span class="ct-[name]__icon" aria-hidden="true">
+  {% include 'civictheme:icon' with { symbol: icon_name, size: 'small' } only %}
+</span>
+```
+
+Icon-only controls (no accompanying text) are *not* decorative — give the control a visually-hidden label and hide the icon. See rule #C in `references/accessibility.md`.
 
 ## Output contract
 
