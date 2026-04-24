@@ -73,8 +73,9 @@ jobs:
           git push --tags
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ env.NEW_VERSION }}
-          name: claude-civictheme-skills v${{ env.NEW_VERSION }}
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${NEW_VERSION}" \
+            --title "claude-civictheme-skills v${NEW_VERSION}" \
+            --generate-notes
