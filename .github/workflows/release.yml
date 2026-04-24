@@ -1,32 +1,80 @@
-name: release
+name: Release plugin
 
 on:
-  push:
-    tags: ["v*.*.*"]
   workflow_dispatch:
+    inputs:
+      release-level:
+        description: "Release level"
+        required: true
+        default: "minor"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
       - run: pip install pyyaml
+
       - name: Lint skills
         run: python scripts/lint-skills.py
-      - name: Build Desktop .skill archives
-        run: ./scripts/build-desktop.sh
-      - name: List build output
-        run: ls -l dist/desktop/
-      - name: Attach archives to release
-        if: startsWith(github.ref, 'refs/tags/v')
+
+      - name: Bump version in plugin.json
+        env:
+          RELEASE_LEVEL: ${{ github.event.inputs.release-level }}
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json, os
+          from pathlib import Path
+
+          level = os.environ["RELEASE_LEVEL"]
+          p = Path(".claude-plugin/plugin.json")
+          d = json.loads(p.read_text())
+          maj, mn, pt = (int(x) for x in d["version"].split("."))
+          if level == "major":
+              maj, mn, pt = maj + 1, 0, 0
+          elif level == "minor":
+              mn, pt = mn + 1, 0
+          else:
+              pt += 1
+          d["version"] = f"{maj}.{mn}.{pt}"
+          p.write_text(json.dumps(d, indent=2) + "\n")
+          print(f"NEW_VERSION={d['version']}")
+          PY
+
+      - name: Configure git as release bot
+        env:
+          GITHUB_ACTOR_ID: ${{ github.actor_id }}
+        run: |
+          git config --global user.email "${GITHUB_ACTOR_ID}+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions release workflow"
+
+      - name: Commit, tag, and push
+        run: |
+          git add .claude-plugin/plugin.json
+          git commit -m "Released claude-civictheme-skills v${NEW_VERSION}."
+          git tag "claude-civictheme-skills--v${NEW_VERSION}"
+          git push origin HEAD:${{ github.ref_name }}
+          git push --tags
+
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/desktop/*.skill
-          fail_on_unmatched_files: true
+          tag_name: claude-civictheme-skills--v${{ env.NEW_VERSION }}
+          name: claude-civictheme-skills v${{ env.NEW_VERSION }}
           generate_release_notes: true
