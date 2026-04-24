@@ -9,7 +9,10 @@
   "plugins": [
     {
       "name": "claude-civictheme-skills",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "JamesFehon-DTA/claude-civictheme-skills"
+      },
       "description": "Skills for CivicTheme sub-theme and UIKit component authoring: type-selector router, SDC/override/paragraph generators, style override, JS enhancement, UIKit component + SCSS iteration, and health check."
     }
   ]
