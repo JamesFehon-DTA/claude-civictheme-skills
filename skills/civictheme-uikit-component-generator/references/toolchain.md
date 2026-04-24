@@ -36,6 +36,48 @@ Step order matters. `validate` depends on the twig package reflecting the curren
 
 ---
 
+## Sync exclusions
+
+`components:update:twig` copies SDC twig, JS, and SCSS **verbatim** into `packages/twig/`. Three file types are excluded wholesale:
+
+| Excluded pattern | Reason |
+|---|---|
+| `.component.yml` | The twig-package docblock is the schema in that package; a second YAML would diverge on first edit |
+| `.css` | The twig package has no per-component CSS — all styles compile into the `civictheme.storybook.css` bundle |
+| `.stories.twig` | Story fixtures are SDC-side only; the twig package uses `.stories.js` render functions |
+
+Everything else — twig, JS, SCSS — is overwritten on every sync. Upstream CivicTheme ships no mechanism to preserve intentional SDC-vs-twig drift in non-excluded files; local divergence in those files is a known sharp edge of the one-way sync model. The typical trigger is a `.stories.js` that needs SDC-specific imports the twig package cannot accept — see "Asset discovery" below.
+
+---
+
+## Asset discovery — pure-CSS atoms and raw-HTML components
+
+The SDC-side Storybook build relies on the sdc-plugin to auto-discover each component's `.css` and `.js` alongside its `.twig`. The plugin walks `Component from './x.twig'` imports — whatever it finds a Twig file for, it bundles the adjacent assets for. Two situations defeat that walk:
+
+**1. Component has no Twig template.** Pure-CSS-and-JS atoms (e.g. Table Sort, Summary List) live as `.css`/`.js` pairs with no `.twig` to import. Their stories use Pattern B's `render` function to build DOM by hand (see `_shared/references/storybook-patterns.md`). Nothing triggers the sdc-plugin walk, so the atom's own `.css` and `.js` are not bundled.
+
+**2. Component emits raw atom HTML instead of a `civictheme:` include.** A molecule or organism that writes `<input class="ct-input">` or `<select class="ct-select">` directly — rather than `{% include 'civictheme:input' %}` / `{% include 'civictheme:select' %}` — doesn't pull the atom's Twig file into the build graph. The markup renders, but the atom's `.css` / `.js` never load, so the atom looks unstyled inside the parent component.
+
+**The mitigation is asymmetric between packages.** In the SDC `.stories.js`, import the needed atom assets explicitly:
+
+```js
+import './table-sort.css';
+import './table-sort.js';
+import '../../01-atoms/input/input.css';
+```
+
+These imports belong **only** in the SDC copy. The twig-package `.stories.js` must omit them — the twig package loads all component styles via its global `civictheme.storybook.css` bundle, and per-component `.css` imports resolve to nothing and fail the twig-side Vite build.
+
+This is the upstream sharp edge. Upstream CivicTheme has no sync-skip mechanism, so the next `components:update:twig` run copies the SDC version — imports and all — over the twig copy, and the twig build breaks until the imports are manually removed again. The workflow today:
+
+1. Edit SDC `.stories.js` with the explicit imports.
+2. Hand-maintain the twig `.stories.js` without them.
+3. After every `components:update:twig` run, remove the imports from the twig copy again.
+
+Forks of the UIKit sometimes patch the sync script to honour a skip marker, which automates step 3; that is not part of upstream CivicTheme and should not be assumed by skill-scaffolded components. Flag step 3 as a required post-generation action whenever the generator emits the SDC-side imports.
+
+---
+
 ## Pre-commit hooks (Husky)
 
 Husky runs quality checks before each commit: lint, tests, and `components:check`. Because `components:check` asserts that `packages/twig/` is a byte-accurate derivative of `packages/sdc/`, commits must happen **after** `components:update:twig` has run against the current SDC source. Committing a freshly generated component without running the sync loop first will fail the pre-commit hook.

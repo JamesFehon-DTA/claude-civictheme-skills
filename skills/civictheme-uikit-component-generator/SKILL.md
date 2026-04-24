@@ -36,7 +36,7 @@ Read before generating:
 - `references/js-patterns.md` — constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when emitting JS behaviour)
 - `references/component-yml-patterns.md` — SDC `.component.yml` schema (including `$schema`), enum values, standard props, sync with the twig docblock
 - `references/storybook-patterns.md` — story file structure for the SDC side; only include when Storybook is confirmed
-- `references/toolchain.md` — canonical sync loop (`components:update:sdc` → `components:update:twig` → `validate`), Husky behaviour, `components:check` semantics
+- `references/toolchain.md` — canonical sync loop (`components:update:sdc` → `components:update:twig` → `validate`), Husky behaviour, `components:check` semantics, sync exclusions, asset discovery for pure-CSS atoms and raw-HTML components
 - `references/variables-pipeline.md` — shared flow from `ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export; read before scaffolding the variable block
 - `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before emitting any interactive markup or ARIA attributes in either package.
 
@@ -110,6 +110,30 @@ After generating the component SCSS:
 
 See `references/variables-pipeline.md` for the full flow (`ct-component-property()` → `--ct-*` custom property → `components/variables.components.scss` → `style.css_variables.scss` export) and examples of how the call shape maps to variable names.
 
+## Asset discovery — explicit SDC imports and a post-sync manual step
+
+The SDC Storybook build auto-discovers per-component `.css` / `.js` via `Component from './x.twig'` includes. Two cases defeat that walk; both produce a component whose atom styles appear broken at runtime even though the SCSS compiles cleanly:
+
+1. **Component has no Twig template** — e.g. a pure-CSS / JS atom like Table Sort or Summary List. The story uses a Pattern B `render` function (see `_shared/references/storybook-patterns.md`); there is no `.twig` import to trigger discovery of the component's own assets.
+2. **Component emits raw atom HTML** — e.g. a molecule that writes `<input class="ct-input">` directly instead of `{% include 'civictheme:input' %}`. The atom's `.twig` is never pulled into the build graph, so its `.css` / `.js` never load.
+
+When scaffolding a component in either category:
+
+- **SDC `[name].stories.js`** — emit explicit imports at the top of the file for every atom the component depends on:
+  ```js
+  import './[name].css';             // for case 1 — the component's own assets
+  import './[name].js';              // for case 1 — if JS behaviour exists
+  import '../../01-atoms/input/input.css';  // for case 2 — each raw-HTML atom
+  import '../../01-atoms/select/select.css';
+  ```
+- **twig-package `[name].stories.js`** — emit the file **without** those imports. The twig package loads all component styles via its global `civictheme.storybook.css` bundle; per-component `.css` imports would resolve to nothing and fail the Vite build.
+
+**Flag the upstream limitation in the output.** CivicTheme ships no sync-skip mechanism for `.stories.js` drift, so the next `components:update:twig` run will copy the SDC version — imports and all — over the twig copy and break the twig Vite build until the imports are manually removed again. Call this out in the output contract's `post_generation_notes` so the user knows to either avoid running the sync after editing these files, or restore the twig-side stories.js by hand after each sync. Do not emit fork-specific skip-marker headers; those depend on patched sync scripts that are not part of upstream CivicTheme.
+
+See `references/toolchain.md` — "Sync exclusions" and "Asset discovery" — for the full sync behaviour and exclusion list.
+
+If Storybook is not present and no `.stories.js` is being emitted, neither addition applies — asset discovery is a story-file concern.
+
 ## Out of scope
 
 **Portable / self-contained components** — components with their own CSS token namespace (`--[prefix]-*`), hardcoded fallback values alongside CivicTheme token references, and multi-site portability as a design constraint. These intentionally bypass `ct-component-theme()`, `ct-typography()`, and the mixin system. They live in Drupal themes under their own SDC namespace, not in `packages/sdc/` or `packages/twig/`. Do not generate them with this skill.
@@ -148,7 +172,7 @@ files:
     contents: |
       <full file contents>
   - path: packages/sdc/components/[tier]/[name]/[name].stories.js  # only if Storybook confirmed
-    purpose: SDC Storybook story
+    purpose: SDC Storybook story — include explicit atom .css/.js imports when the component has no Twig template or emits raw atom HTML (see "Asset discovery")
     contents: |
       <full file contents>
   - path: packages/twig/components/[tier]/[name]/[name].twig
@@ -157,6 +181,10 @@ files:
       <full file contents>
   - path: packages/twig/components/[tier]/[name]/[name].scss
     purpose: twig-package styles (content matches the SDC file)
+    contents: |
+      <full file contents>
+  - path: packages/twig/components/[tier]/[name]/[name].stories.js  # only when the SDC stories.js carries imports that would break the twig Vite build; otherwise omit and let components:update:twig produce it
+    purpose: twig-package story emitted WITHOUT the per-component .css/.js imports (twig uses the civictheme.storybook.css bundle instead). IMPORTANT — upstream has no sync-skip mechanism, so components:update:twig will overwrite this file with the SDC version; the user must manually remove the imports again after every sync (see post_generation_notes)
     contents: |
       <full file contents>
   # Do NOT also write packages/twig/components/variables.components.scss — the twig package is a generated derivative of SDC, and components:update:twig will overwrite any hand-written copy.
@@ -170,4 +198,6 @@ post_generation_notes:
   - Run npm run validate to check schema, enum, and theme-variable correctness — only meaningful after both sync steps.
   - Run npm run dist to compile SCSS → CSS, then npm run dev:twig to preview in Storybook.
   - Run npm run lint before committing.
+  # Emit only when asset-discovery applied (the component has no Twig template, or emits raw atom HTML):
+  - ASSET DISCOVERY — manual step required after every sync. components:update:twig will overwrite the twig-package stories.js with the SDC version, re-introducing the per-component .css/.js imports that break the twig Vite build. After each sync, remove those imports from packages/twig/components/[tier]/[name]/[name].stories.js by hand. This is an upstream limitation of the one-way sync model; see references/toolchain.md "Asset discovery".
 ```

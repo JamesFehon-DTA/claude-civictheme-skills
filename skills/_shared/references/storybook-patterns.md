@@ -142,6 +142,8 @@ The primary driver is whether a Twig template exists, not the component tier. A 
 
 The only CSS-only components in the upstream CivicTheme base are **Table Sort** and **Summary List** (both atoms). For the full component list and tier assignments, see `references/component-taxonomy.md`.
 
+**CSS-only components need explicit asset imports in the SDC stories file.** The sdc-plugin auto-discovers per-component `.css` / `.js` via `Component from './x.twig'` includes; with no Twig template there is no include for it to walk. In the **SDC** `.stories.js`, import the atom's `.css` and `.js` explicitly at the top of the file so the sdc-plugin bundles them. The **twig-package** `.stories.js` must NOT have those imports — the twig Vite build would fail on them (the twig package uses a global `civictheme.storybook.css` bundle instead). Upstream CivicTheme has no sync-skip mechanism, so the next `components:update:twig` run copies the SDC stories.js over the twig copy and breaks the twig build until the imports are manually removed again. The same situation applies to any component that emits raw atom HTML (`<input class="ct-input">`) in place of `{% include 'civictheme:input' %}`. See "Sync exclusions" and "Asset discovery" in `civictheme-uikit-component-generator/references/toolchain.md`.
+
 ## Default export fields
 
 - `title` — Storybook sidebar path (`Atoms/...`, `Molecules/...`, `Organisms/...`).
