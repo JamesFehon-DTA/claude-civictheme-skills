@@ -29,7 +29,7 @@ The handlers consume a set of canonical reference files to ensure consistency ac
 * **`storybook-patterns.md`:** SDC story structure and Storybook conventions.
 * **`civictheme-field-storage.md`:** CivicTheme field storage export used as reference data.
 
-Cross-handler references are stored once under `skills/_shared/references/` and symlinked into each handler's `references/` folder. The Desktop packager follows symlinks, so every `.skill` archive ships a self-contained copy.
+Cross-handler references are stored once under `skills/_shared/references/` and symlinked into each handler's `references/` folder. Symlinks resolve at session load time in Claude Code and are followed when the plugin is cached on install, so every handler gets a self-contained copy without duplication in the source tree.
 
 ## Deterministic Principles
 
@@ -43,6 +43,9 @@ Skills were created by referencing CivicTheme technical facts:
 ## Repository layout
 
 ```
+.claude-plugin/
+  plugin.json                                   ← plugin manifest (name + version)
+  marketplace.json                              ← digital-gov-au marketplace catalog
 skills/
   civictheme-component-type-selector/SKILL.md   ← router
   civictheme-sdc-generator/                     ← handler (routed)
@@ -60,36 +63,32 @@ templates/
   consumer-sub-theme-claude-md.md               ← paste into Drupal sub-theme CLAUDE.md
   consumer-uikit-claude-md.md                   ← paste into UIKit repo CLAUDE.md
 scripts/
-  build-desktop.sh                              ← builds dist/desktop/*.skill
-  package_skill.py                              ← vendored Anthropic packager
   lint-skills.py                                ← CI structural validator
   civictheme-compat-review-prompt.md            ← compatibility review prompt
 .github/workflows/
   lint.yml                                      ← runs lint-skills.py on PRs
-  release.yml                                   ← builds .skill archives on tags
-dist/desktop/                                   ← gitignored build output
+  release.yml                                   ← dispatch-triggered plugin release
 ```
 
 ## Continuous integration
 
 * **`lint.yml`** runs `scripts/lint-skills.py` on every pull request and push to `main`. The linter validates SKILL.md frontmatter, keeps `references/*.md` and in-file citations in sync, verifies the router references every handler directory, resolves every relative markdown link, and parses every fenced ```yaml block. See `scripts/lint-skills.py` for the full check list.
-* **`release.yml`** is triggered by pushing a `v*.*.*` tag. It lints, runs `scripts/build-desktop.sh`, and attaches the resulting `dist/desktop/*.skill` archives to the GitHub Release.
+* **`release.yml`** is triggered by `workflow_dispatch` with a `release-level` input (`patch` | `minor` | `major`). It lints, bumps the version in `.claude-plugin/plugin.json`, commits the bump as `GitHub Actions release workflow`, tags `claude-civictheme-skills--v<version>`, pushes to `main`, and publishes a GitHub release with auto-generated notes. No build artefacts — installs go via the plugin marketplace.
 
-## Install and routing
+## Install
 
-Three concerns, three mechanisms. Pick one per concern:
+This repo is a Claude Code plugin distributed via the `digital-gov-au` marketplace. The same plugin works in Claude Code and Claude Desktop (local and SSH sessions; Desktop's remote-session mode does not support plugins).
 
-| Concern | Mechanism | Why |
-|---|---|---|
-| **Discoverability** — Claude can see the skill | Filesystem symlinks into `<project>/.claude/skills/` (Code) or `.skill` archive upload (Desktop) | Skills are loaded at session start from these locations only |
-| **Freshness** — the loaded copy matches the repo | Claude Code reads from disk every session; Desktop snapshots at upload time | Edit-and-reload works in Code; Desktop requires re-upload on every release |
-| **Routing** — which skill to invoke when the user asks | Skill `description` frontmatter (auto) plus a project CLAUDE.md block (explicit team convention) | Frontmatter handles defaults; CLAUDE.md pins project-specific behaviour frontmatter cannot express |
+```
+/plugin marketplace add JamesFehon-DTA/claude-civictheme-skills
+/plugin install claude-civictheme-skills@digital-gov-au
+```
 
-**Do not use auto-memory or the user's global `~/.claude/skills/` for team conventions.** Memory is personal and not version-controlled, and a global install can only hold one default — which breaks when one machine needs to work on both a Drupal sub-theme (twig-first) and the UIKit repo (SDC-first) in the same week.
+Claude Code refreshes the marketplace on startup and pulls new tagged versions automatically. Desktop users re-run `/plugin marketplace update digital-gov-au` to pick up the latest version.
 
-### Claude Code (filesystem) — recommended for authors and teammates
+### Filesystem install (for authors iterating on this repo)
 
-Link each skill folder into a project's `.claude/skills/` directory. Check the symlinks into the consumer repo so every teammate gets the same set. Claude Code re-reads from disk each session, so edits in the source clone are visible immediately.
+When editing skills in this repo and wanting the changes to show up immediately in a consumer project's Claude Code session, symlink individual skill folders into the project's `.claude/skills/` directory. This bypasses the plugin install and reads directly from disk each session.
 
 ```bash
 git clone <repo>              # e.g. into ~/src/claude-civictheme-skills
@@ -102,22 +101,11 @@ for d in ~/src/claude-civictheme-skills/skills/*/; do
 done
 ```
 
-For a global install that applies to every project on the machine, link into `~/.claude/skills/` instead — but only do this if you work on a single CivicTheme archetype (sub-theme *or* UIKit, not both).
+End users should prefer the `/plugin install` path above — symlinks are for contributors whose edits need to land in a live session without a release.
 
-### Claude Desktop (parallel `.skill` uploads) — for users not on Claude Code
+### Legacy `.skill` archive install (deprecated)
 
-Tagged releases ship prebuilt `.skill` archives on the repository's GitHub Releases page — download all attached files and upload them to your Desktop project's skill knowledge. There are nine archives (one per skill: the router, five routed handlers, and three direct-entry skills).
-
-To build the archives locally (for contributing or installing from an untagged commit):
-
-```bash
-./scripts/build-desktop.sh
-# then upload every dist/desktop/*.skill file via the Desktop UI
-```
-
-Each archive is a standard zip with the skill folder at the top level. The packager dereferences symlinks, so every archive is self-contained — Desktop does not need access to `skills/_shared/`.
-
-**Freshness caveat.** Desktop stores each upload as a point-in-time snapshot. Edits to the source repo are not visible to Desktop sessions until the archive is rebuilt and re-uploaded. If the skill and the source repo disagree, trust the source repo — the Desktop copy is stale.
+Releases up to and including [v1.2.0](https://github.com/JamesFehon-DTA/claude-civictheme-skills/releases/tag/v1.2.0) shipped nine `.skill` archives per release for Claude Desktop. The v1.3.0 plugin migration replaces that flow with a two-step marketplace install. The archives attached to v1.2.0 remain available for users who have not migrated, but no new archives will be produced.
 
 ### Routing: paste a CLAUDE.md block into your consumer project
 
@@ -127,3 +115,5 @@ The skill frontmatter handles defaults, but two consumer archetypes need differe
 - **CivicTheme UIKit / design system repo** — authoring components directly in `packages/sdc/` and `packages/twig/`. Paste from [templates/consumer-uikit-claude-md.md](templates/consumer-uikit-claude-md.md) into the project's CLAUDE.md. Pins SDC-first authoring and the post-generation toolchain sync loop.
 
 Each template file contains a paste-only section plus a header comment explaining what to copy.
+
+**Do not use auto-memory or the user's global `~/.claude/skills/` for team conventions.** Memory is personal and not version-controlled, and a global install can only hold one default — which breaks when one machine needs to work on both a Drupal sub-theme (twig-first) and the UIKit repo (SDC-first) in the same week. Conventions that the whole team needs belong in the consumer project's CLAUDE.md.
