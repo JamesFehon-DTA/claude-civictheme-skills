@@ -1,9 +1,9 @@
 {
-  "name": "claude-civictheme-skills",
+  "name": "civictheme-skills",
   "version": "1.3.0",
   "description": "Claude skills for CivicTheme sub-theme and UIKit development \u2014 type-selector router plus handlers for SDC generation, component overrides, SCSS variable overrides, JS enhancement, paragraph scaffolding, UIKit component authoring, UIKit SCSS iteration, and health checks.",
   "author": {
-    "name": "Digital Transformation Agency"
+    "name": "JamesFehon-DTA"
   },
   "homepage": "https://github.com/JamesFehon-DTA/claude-civictheme-skills",
   "repository": "https://github.com/JamesFehon-DTA/claude-civictheme-skills"

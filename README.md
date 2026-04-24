@@ -81,7 +81,7 @@ This repo is a Claude Code plugin distributed via the `digital-gov-au` marketpla
 
 ```
 /plugin marketplace add JamesFehon-DTA/claude-civictheme-skills
-/plugin install claude-civictheme-skills@digital-gov-au
+/plugin install civictheme-skills@digital-gov-au
 ```
 
 Claude Code refreshes the marketplace on startup and pulls new tagged versions automatically. Desktop users re-run `/plugin marketplace update digital-gov-au` to pick up the latest version.

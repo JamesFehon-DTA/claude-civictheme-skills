@@ -1,15 +1,18 @@
 {
   "name": "digital-gov-au",
   "owner": {
-    "name": "Digital Transformation Agency"
+    "name": "JamesFehon-DTA"
   },
   "metadata": {
     "description": "Claude Code plugins for digital.gov.au teams working with CivicTheme and related design systems."
   },
   "plugins": [
     {
-      "name": "claude-civictheme-skills",
-      "source": "./",
+      "name": "civictheme-skills",
+      "source": {
+        "source": "github",
+        "repo": "JamesFehon-DTA/claude-civictheme-skills"
+      },
       "description": "Skills for CivicTheme sub-theme and UIKit component authoring: type-selector router, SDC/override/paragraph generators, style override, JS enhancement, UIKit component + SCSS iteration, and health check."
     }
   ]
