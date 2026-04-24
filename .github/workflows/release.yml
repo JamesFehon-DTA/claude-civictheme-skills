@@ -68,13 +68,13 @@ jobs:
         run: |
           git add .claude-plugin/plugin.json
           git commit -m "Released claude-civictheme-skills v${NEW_VERSION}."
-          git tag "claude-civictheme-skills--v${NEW_VERSION}"
+          git tag "v${NEW_VERSION}"
           git push origin HEAD:${{ github.ref_name }}
           git push --tags
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: claude-civictheme-skills--v${{ env.NEW_VERSION }}
+          tag_name: v${{ env.NEW_VERSION }}
           name: claude-civictheme-skills v${{ env.NEW_VERSION }}
           generate_release_notes: true
