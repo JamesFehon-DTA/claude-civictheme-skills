@@ -24,4 +24,6 @@ npm run validate                # lint + schema + theme-variable checks
 
 The generator's twig output is a bootstrap. `components:update:twig` overwrites it with namespace-transformed, docblock-correct content — this is intentional and is what makes the twig package a genuine derivative of SDC.
 
+**Always dispatch the Skill tool — never substitute a Read of SKILL.md.** Reading the markdown produces the same prose but skips the SDC-vs-twig package routing and the project-context capture. If you find yourself reaching for the Read tool on a CivicTheme SKILL.md file, stop and dispatch the Skill instead. This applies even when the user explicitly names a downstream skill — UIKit work has three direct-entry skills (`civictheme-uikit-component-generator`, `civictheme-uikit-scss-iteration`, `civictheme-health-check`) and the right one is determined by intent, not by the user repeating a name in the prompt.
+
 **No `.component.yml` in `packages/twig/`.** The twig docblock is the schema there, generated from the SDC `.component.yml` by `components:update:twig`. Writing a second schema in the twig package creates a divergence the moment either side is edited.
