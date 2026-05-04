@@ -10,3 +10,8 @@ __pycache__/
 .dolt/
 *.db
 .beads-credential-key
+
+# Internal only — bd tracker and AI-agent docs
+.beads/
+AGENTS.md
+CLAUDE.md
