@@ -65,6 +65,12 @@ def check_skill(skill_dir: Path, errors: list[str]) -> None:
         if not fm.get(field):
             errors.append(f"{skill_md}: frontmatter missing '{field}'")
 
+    desc = fm.get("description", "")
+    if isinstance(desc, str) and len(desc) > 1024:
+        errors.append(
+            f"{skill_md}: description is {len(desc)} chars (limit 1024)"
+        )
+
     if fm.get("name") and fm["name"] != skill_dir.name:
         errors.append(
             f"{skill_md}: name '{fm['name']}' does not match directory '{skill_dir.name}'"
