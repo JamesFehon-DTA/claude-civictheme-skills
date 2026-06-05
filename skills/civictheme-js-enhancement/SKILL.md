@@ -1,17 +1,17 @@
 ---
 name: civictheme-js-enhancement
-description: Generate JS and CSS enhancements targeting existing CivicTheme markup without creating or modifying an SDC component. Use when the type-selector returns js_css_enhancement_without_sdc_component, or when the user wants to add behaviour or progressive enhancement to existing CivicTheme elements, add a sortable table, add a filterable interaction, or enhance existing markup with JS.
+description: Generate JS and CSS enhancements targeting existing CivicTheme markup in a Drupal sub-theme without creating or modifying an SDC component. Sub-theme signal – the repo has no `packages/sdc/`; if `packages/sdc/` is present this is the UIKit, so route through `civictheme-uikit-component-generator` instead. Use when the type-selector returns js_css_enhancement_without_sdc_component, or when the user wants to add behaviour or progressive enhancement to existing CivicTheme elements, add a sortable table, add a filterable interaction, or enhance existing markup with JS.
 ---
 
 # CivicTheme JS/CSS Enhancement
 
 Generate JS, CSS, and library files for a behaviour enhancement on existing CivicTheme markup.
 
-Enhancements **extend** CivicTheme — they do not override it. Files ship as plain `.css` and `.js` (no `.scss`, no `npm run dist`) and declare their own library that loads alongside CivicTheme's.
+Enhancements **extend** CivicTheme – they do not override it. Files ship as plain `.css` and `.js` (no `.scss`, no `npm run dist`) and declare their own library that loads alongside CivicTheme's.
 
 ## Required inputs
 
-- `[THEME_MACHINE_NAME]` — sub-theme machine name
+- `[THEME_MACHINE_NAME]` – sub-theme machine name
 - Enhancement name (kebab-case)
 - What markup is being targeted (classes, `data-` attributes, element types)
 - Whether the enhancement should be site-wide or context-specific
@@ -19,11 +19,11 @@ Enhancements **extend** CivicTheme — they do not override it. Files ship as pl
 ## Core rules
 
 - Enhancements have **no** `.component.yml`. Drupal's SDC system will not auto-load any assets.
-- Both CSS and JS must be declared in a library — neither loads automatically.
-- Use `data-` attribute selectors for JS targeting — not classes or IDs. This decouples JS from markup changes.
+- Both CSS and JS must be declared in a library – neither loads automatically.
+- Use `data-` attribute selectors for JS targeting – not classes or IDs. This decouples JS from markup changes.
 - Use `Drupal.behaviors` and `once()` for all JS. Never use `document.addEventListener('DOMContentLoaded', ...)`.
 - If the enhancement targets CivicTheme CSS classes on native HTML elements (e.g. `ct-select` on a `<select>`), the component CSS will not auto-load. Include the base component CSS from `components_combined/` in the library.
-- Always use `components_combined/[level]/[name]/[name].css` for base CivicTheme component CSS — never `../../contrib/civictheme/`.
+- Always use `components_combined/[level]/[name]/[name].css` for base CivicTheme component CSS – never `../../contrib/civictheme/`.
 
 ## Decision logic
 
@@ -36,15 +36,15 @@ Enhancements **extend** CivicTheme — they do not override it. Files ship as pl
 
 Read before generating:
 
-- `references/libraries-and-assets.md` — library declaration format, `components_combined/` rule, global vs conditional attachment, CSS weight and preprocessing options
-- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before emitting any DOM mutation that changes ARIA attributes, link state, or adds/removes interactive markup.
+- `references/libraries-and-assets.md` – library declaration format, `components_combined/` rule, global vs conditional attachment, CSS weight and preprocessing options
+- `references/accessibility.md` – repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read before emitting any DOM mutation that changes ARIA attributes, link state, or adds/removes interactive markup.
 
-## Accessibility — enforced at generation
+## Accessibility – enforced at generation
 
-Enhancements mutate existing CivicTheme markup at runtime — getting the ARIA/link/icon rules wrong silently breaks AT announcements. Emit these JS patterns inline, with their citing comments intact:
+Enhancements mutate existing CivicTheme markup at runtime – getting the ARIA/link/icon rules wrong silently breaks AT announcements. Emit these JS patterns inline, with their citing comments intact:
 
 ```js
-// a11y #A: disabled link — flip aria-disabled, tabindex, and href together.
+// a11y #A: disabled link – flip aria-disabled, tabindex, and href together.
 // Never set the disabled property on an <a>. See references/accessibility.md.
 function setLinkDisabled(link, disabled) {
   if (disabled) {
@@ -59,7 +59,7 @@ function setLinkDisabled(link, disabled) {
   }
 }
 
-// a11y #B: new-tab notice — append a visually-hidden span, don't set aria-label.
+// a11y #B: new-tab notice – append a visually-hidden span, don't set aria-label.
 // aria-label="Opens in a new tab" REPLACES the link's accessible name. Never use it.
 function appendNewTabNotice(link) {
   if (link.querySelector('.ct-visually-hidden[data-ct-new-tab]')) return;
@@ -81,7 +81,7 @@ function injectDecorativeIcon(host, svgMarkup) {
 }
 ```
 
-Enhancement CSS that styles a disabled-link state must key on `[aria-disabled="true"]`, never `:disabled` — anchors do not match `:disabled`. See rule #A in `references/accessibility.md`.
+Enhancement CSS that styles a disabled-link state must key on `[aria-disabled="true"]`, never `:disabled` – anchors do not match `:disabled`. See rule #A in `references/accessibility.md`.
 
 ## Output contract
 
@@ -89,7 +89,7 @@ Enhancement CSS that styles a disabled-link state must key on `[aria-disabled="t
 enhancement_name: <kebab-case-name>
 files:
   - path: components/[level]/[enhancement-name]/[enhancement-name].css
-    purpose: enhancement styles (plain CSS — no SCSS, no build step)
+    purpose: enhancement styles (plain CSS – no SCSS, no build step)
     contents: |
       <full file contents>
   - path: components/[level]/[enhancement-name]/[enhancement-name].js
@@ -97,10 +97,10 @@ files:
     contents: |
       <full file contents>
   - path: [THEME_MACHINE_NAME].libraries.yml
-    purpose: library declaration — both CSS and JS required (no SDC auto-loading)
+    purpose: library declaration – both CSS and JS required (no SDC auto-loading)
     contents: |
-      <only the new or updated library entry — not the entire file>
+      <only the new or updated library entry – not the entire file>
 attachment_notes:
   - <global: add [THEME_MACHINE_NAME]/[name] to libraries: in [THEME_MACHINE_NAME].info.yml>
-  - <OR conditional: $variables['#attached']['library'][] = '[THEME_MACHINE_NAME]/[name]'; in preprocess hook — include the specific hook name>
+  - <OR conditional: $variables['#attached']['library'][] = '[THEME_MACHINE_NAME]/[name]'; in preprocess hook – include the specific hook name>
 ```

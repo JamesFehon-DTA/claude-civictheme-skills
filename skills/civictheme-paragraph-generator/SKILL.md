@@ -1,6 +1,6 @@
 ---
 name: civictheme-paragraph-generator
-description: Generate the Drupal integration layer for a CivicTheme-styled paragraph or content element, including paragraph template, preprocess hook, theme registration, and JS library attachment. Use when the type-selector returns paragraph_or_content_element_using_civictheme_component, or when the user asks to create a paragraph type, content element, or Drupal authoring pattern wrapping a CivicTheme SDC component.
+description: Generate the Drupal integration layer for a CivicTheme-styled paragraph or content element in a Drupal sub-theme, including paragraph template, preprocess hook, theme registration, and JS library attachment. Sub-theme signal – the repo has no `packages/sdc/`; a paragraph integration layer is Drupal-only and does not apply in the UIKit. Use when the type-selector returns paragraph_or_content_element_using_civictheme_component, or when the user asks to create a paragraph type, content element, or Drupal authoring pattern wrapping a CivicTheme SDC component.
 ---
 
 # CivicTheme Paragraph Generator
@@ -9,7 +9,7 @@ Generate the Drupal integration layer for a CivicTheme-styled paragraph type.
 
 ## Required inputs
 
-- `[THEME_MACHINE_NAME]` — sub-theme machine name
+- `[THEME_MACHINE_NAME]` – sub-theme machine name
 - Paragraph machine name (snake_case)
 - Target SDC component namespace (`[THEME_MACHINE_NAME]:[name]` or `civictheme:[name]`)
 - Fields needed (machine names or descriptions to infer machine names from)
@@ -17,13 +17,13 @@ Generate the Drupal integration layer for a CivicTheme-styled paragraph type.
 
 ## Core rules
 
-- Paragraph template includes the SDC component using `only` — mandatory; prevents Drupal internals from polluting component prop scope.
-- `$variables['content'] = NULL` is required in every paragraph preprocess hook — suppresses Drupal's default field render.
+- Paragraph template includes the SDC component using `only` – mandatory; prevents Drupal internals from polluting component prop scope.
+- `$variables['content'] = NULL` is required in every paragraph preprocess hook – suppresses Drupal's default field render.
 - CSS auto-loads via SDC when the component template renders. Only attach JS in the library.
 - **Field naming:**
   - Shared CivicTheme paragraph fields → `field_c_p_` prefix
   - Custom sub-theme fields → `field_[THEME_MACHINE_NAME]_` prefix
-  - `field_p_` is **not a real CivicTheme convention** — never use it
+  - `field_p_` is **not a real CivicTheme convention** – never use it
   - See `references/field-naming.md` for full rules and linting logic
 
 ## Cacheability
@@ -31,9 +31,9 @@ Generate the Drupal integration layer for a CivicTheme-styled paragraph type.
 CivicTheme manages cacheable metadata at the field-getter level (introduced as a security fix in 1.12.0). Generated preprocess hooks must follow this convention.
 
 - Pass `$variables` as the `$build` argument to `civictheme_get_field_referenced_entities()` and `civictheme_get_referenced_entity_labels()`. Omitting it triggers a deprecation warning in 1.12.x; upstream states the parameter will be required in 1.13.0.
-- Attach the paragraph's own cache tags: `$variables['#cache']['tags'] = $paragraph->getCacheTags();` — mirrors `manual_list.inc:39` in CivicTheme source.
-- For context-varying output (URL, query, role) use narrow contexts: `url.path`, `url.query_args:key`, `user.roles`. Avoid bare `user` — it defeats Akamai edge caching on GovCMS SaaS.
-- Never set `$variables['#cache']['max-age'] = 0` in a paragraph preprocess — makes the host node page uncacheable at the edge. Per-user state belongs in a `#lazy_builder` placeholder so the surrounding page stays cacheable.
+- Attach the paragraph's own cache tags: `$variables['#cache']['tags'] = $paragraph->getCacheTags();` – mirrors `manual_list.inc:39` in CivicTheme source.
+- For context-varying output (URL, query, role) use narrow contexts: `url.path`, `url.query_args:key`, `user.roles`. Avoid bare `user` – it defeats Akamai edge caching on GovCMS SaaS.
+- Never set `$variables['#cache']['max-age'] = 0` in a paragraph preprocess – makes the host node page uncacheable at the edge. Per-user state belongs in a `#lazy_builder` placeholder so the surrounding page stays cacheable.
 
 See `references/preprocess-helpers.md` §Cacheable metadata for worked examples, upstream source references, and the deprecation link.
 
@@ -48,20 +48,20 @@ See `references/preprocess-helpers.md` §Cacheable metadata for worked examples,
 
 Read before generating:
 
-- `references/field-naming.md` — allowed/disallowed field prefixes, linting rules, sub-theme vs CivicTheme namespaces
-- `references/twig-patterns.md` — paragraph template pattern, `only` keyword rationale
-- `references/js-patterns.md` — constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when attaching a JS behaviour to the paragraph)
-- `references/libraries-and-assets.md` — conditional library attachment, SDC CSS auto-loading
-- `references/preprocess-helpers.md` — CivicTheme field helper API, shared preprocess helpers, when `\Drupal::` is appropriate
-- `references/civictheme-field-storage.md` — storage type, cardinality, max length, HTML support, and bundle attachments for every canonical `field_c_p_*` / `field_c_n_*`. Consult before mapping a field to a component prop: if the target prop expects HTML but the field is `string` / `string_long` (e.g. `field_c_p_summary`, `field_c_p_url`), warn the author — the markup will render escaped. Use it to confirm cardinality before deciding the `$multiple` flag on `civictheme_get_field_value()`.
-- `references/accessibility.md` — repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read when the paragraph template emits link-shaped controls, new-tab links, or decorative icon markup directly rather than delegating to the SDC include.
+- `references/field-naming.md` – allowed/disallowed field prefixes, linting rules, sub-theme vs CivicTheme namespaces
+- `references/twig-patterns.md` – paragraph template pattern, `only` keyword rationale
+- `references/js-patterns.md` – constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when attaching a JS behaviour to the paragraph)
+- `references/libraries-and-assets.md` – conditional library attachment, SDC CSS auto-loading
+- `references/preprocess-helpers.md` – CivicTheme field helper API, shared preprocess helpers, when `\Drupal::` is appropriate
+- `references/civictheme-field-storage.md` – storage type, cardinality, max length, HTML support, and bundle attachments for every canonical `field_c_p_*` / `field_c_n_*`. Consult before mapping a field to a component prop: if the target prop expects HTML but the field is `string` / `string_long` (e.g. `field_c_p_summary`, `field_c_p_url`), warn the author – the markup will render escaped. Use it to confirm cardinality before deciding the `$multiple` flag on `civictheme_get_field_value()`.
+- `references/accessibility.md` – repo-wide a11y rules enforced at generation: disabled links (no `disabled` on `<a>`), new-tab notices (append, don't replace accessible name), decorative icons (`aria-hidden="true"`). Read when the paragraph template emits link-shaped controls, new-tab links, or decorative icon markup directly rather than delegating to the SDC include.
 
-## Accessibility — enforced at generation
+## Accessibility – enforced at generation
 
-Paragraph templates are usually thin wrappers that `include` an SDC component — the component owns the a11y pattern. But when the paragraph emits its own anchor, new-tab link, or icon markup (e.g. an author-supplied "read more" link rendered in the paragraph template itself), inline these patterns with their citing comments:
+Paragraph templates are usually thin wrappers that `include` an SDC component – the component owns the a11y pattern. But when the paragraph emits its own anchor, new-tab link, or icon markup (e.g. an author-supplied "read more" link rendered in the paragraph template itself), inline these patterns with their citing comments:
 
 ```twig
-{# a11y #A: disabled link — aria-disabled + tabindex="-1" + omit href.
+{# a11y #A: disabled link – aria-disabled + tabindex="-1" + omit href.
    Never emit `disabled` on <a>. See references/accessibility.md. #}
 {% if is_disabled %}
   <a class="ct-[name]" aria-disabled="true" tabindex="-1">{{ label }}</a>
@@ -69,19 +69,19 @@ Paragraph templates are usually thin wrappers that `include` an SDC component �
   <a class="ct-[name]" href="{{ url }}">{{ label }}</a>
 {% endif %}
 
-{# a11y #B: new-tab notice — append via visually-hidden span.
+{# a11y #B: new-tab notice – append via visually-hidden span.
    Never replace the accessible name with aria-label="Opens in a new tab". #}
 <a href="{{ url }}" target="_blank" rel="noopener noreferrer">
   {{ label }}<span class="ct-visually-hidden"> (opens in a new tab)</span>
 </a>
 
-{# a11y #C: decorative icon — aria-hidden on the wrapping span so AT does not double-announce. #}
+{# a11y #C: decorative icon – aria-hidden on the wrapping span so AT does not double-announce. #}
 <span class="ct-[name]__icon" aria-hidden="true">
   {% include 'civictheme:icon' with { symbol: icon_name, size: 'small' } only %}
 </span>
 ```
 
-When the paragraph passes a link field into a CivicTheme SDC component, prefer the component's built-in new-tab handling (`is_new_window: link.is_new_window`) over assembling the anchor manually — the base component already implements rule #B correctly.
+When the paragraph passes a link field into a CivicTheme SDC component, prefer the component's built-in new-tab handling (`is_new_window: link.is_new_window`) over assembling the anchor manually – the base component already implements rule #B correctly.
 
 ## Output contract
 
@@ -90,21 +90,21 @@ paragraph_machine_name: <machine_name>
 component_namespace: <[THEME_MACHINE_NAME]:[name] or civictheme:[name]>
 files:
   - path: templates/paragraph--[paragraph-machine-name].html.twig
-    purpose: thin paragraph template — passes fields as props to the SDC component
+    purpose: thin paragraph template – passes fields as props to the SDC component
     contents: |
       <full file contents>
   - path: includes/paragraphs--[paragraph-machine-name].inc
-    purpose: preprocess hook — field mapping, cache-tag attachment, content null, JS library attachment
+    purpose: preprocess hook – field mapping, cache-tag attachment, content null, JS library attachment
     contents: |
-      <full file contents — must include $variables['#cache']['tags'] = $paragraph->getCacheTags(); and pass $variables as $build to civictheme_get_field_referenced_entities / civictheme_get_referenced_entity_labels where referenced entities are loaded>
+      <full file contents – must include $variables['#cache']['tags'] = $paragraph->getCacheTags(); and pass $variables as $build to civictheme_get_field_referenced_entities / civictheme_get_referenced_entity_labels where referenced entities are loaded>
   - path: [THEME_MACHINE_NAME].theme
     purpose: preprocess include registration
     contents: |
-      <only the new require_once line — not the entire file>
+      <only the new require_once line – not the entire file>
   - path: [THEME_MACHINE_NAME].libraries.yml  # only if JS needed
     purpose: JS-only library entry
     contents: |
-      <only the new library entry — not the entire file>
+      <only the new library entry – not the entire file>
 post_generation_notes:
   - Ensure the paragraph bundle and all mapped fields exist in Drupal configuration before testing.
   - Drupal configuration must exist before testing: field.storage.*, field.field.*, core.entity_form_display.*, core.entity_view_display.*, paragraphs.paragraphs_type.*. Export from a working environment via `drush cex` or create manually in config/install.

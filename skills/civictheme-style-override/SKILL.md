@@ -1,6 +1,6 @@
 ---
 name: civictheme-style-override
-description: Generate SCSS variable overrides to change the appearance of CivicTheme components without copying component files. Use when the type-selector returns style_only_override_existing_civictheme_component, or when the user wants to change colours, spacing, borders, or typography in a CivicTheme sub-theme. Always suggest this before civictheme-override-generator when the user describes appearance changes.
+description: Generate SCSS variable overrides to change the appearance of CivicTheme components in a Drupal sub-theme without copying component files. Sub-theme signal – the repo has no `packages/sdc/`; if `packages/sdc/` is present this is the UIKit, so use `civictheme-uikit-scss-iteration` instead. Use when the type-selector returns style_only_override_existing_civictheme_component, or when the user wants to change colours, spacing, borders, or typography in a CivicTheme sub-theme. Always suggest this before civictheme-override-generator when the user describes appearance changes.
 ---
 
 # CivicTheme Style Override
@@ -14,11 +14,11 @@ Generate SCSS variable overrides in a CivicTheme sub-theme. No component files a
 
 ## Core rules
 
-- CivicTheme declares all variables with `!default`. Sub-theme overrides must **not** include `!default` — the build imports sub-theme files before base theme files, so the sub-theme value wins.
+- CivicTheme declares all variables with `!default`. Sub-theme overrides must **not** include `!default` – the build imports sub-theme files before base theme files, so the sub-theme value wins.
 - Two target files:
-  - `components/variables.base.scss` — global design tokens: brand colours, typography scale, spacing particle, breakpoints
-  - `components/variables.components.scss` — per-component appearance: colour, border, spacing per component
-- For SASS map variables (colour palettes, breakpoints), always use `map.merge()` to extend — never replace the entire map.
+  - `components/variables.base.scss` – global design tokens: brand colours, typography scale, spacing particle, breakpoints
+  - `components/variables.components.scss` – per-component appearance: colour, border, spacing per component
+- For SASS map variables (colour palettes, breakpoints), always use `map.merge()` to extend – never replace the entire map.
 
 ## Decision logic
 
@@ -42,8 +42,8 @@ Examples:
 
 Read before generating:
 
-- `references/variables-and-theming.md` — full naming conventions, three levels of colour override, map extension patterns, SCSS mixin usage, where to find available variables
-- `references/civictheme-field-storage.md` — storage type, cardinality, and HTML support for every canonical `field_c_p_*` / `field_c_n_*`. Relevant when a requested style change depends on markup shape (e.g. "style the summary text as multi-paragraph rich text"): confirm the backing field actually stores that shape before committing to SCSS selectors that assume paragraph-level descendants. If the field is `string`/`string_long`, the rendered output is a single text node, not wrapped block elements — recommend a markup-level change instead of a style override.
+- `references/variables-and-theming.md` – full naming conventions, three levels of colour override, map extension patterns, SCSS mixin usage, where to find available variables
+- `references/civictheme-field-storage.md` – storage type, cardinality, and HTML support for every canonical `field_c_p_*` / `field_c_n_*`. Relevant when a requested style change depends on markup shape (e.g. "style the summary text as multi-paragraph rich text"): confirm the backing field actually stores that shape before committing to SCSS selectors that assume paragraph-level descendants. If the field is `string`/`string_long`, the rendered output is a single text node, not wrapped block elements – recommend a markup-level change instead of a style override.
 
 ## Output contract
 
@@ -52,7 +52,7 @@ files:
   - path: components/variables.base.scss
     purpose: global design token overrides
     contents: |
-      <SCSS without !default — omit this file entry if no global changes needed>
+      <SCSS without !default – omit this file entry if no global changes needed>
   - path: components/variables.components.scss
     purpose: per-component appearance overrides
     contents: |

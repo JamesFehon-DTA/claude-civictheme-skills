@@ -1,10 +1,25 @@
 {
   "name": "civictheme-skills",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Claude skills for CivicTheme sub-theme and UIKit development \u2014 type-selector router plus handlers for SDC generation, component overrides, SCSS variable overrides, JS enhancement, paragraph scaffolding, UIKit component authoring, UIKit SCSS iteration, and health checks.",
   "author": {
     "name": "JamesFehon-DTA"
   },
   "homepage": "https://github.com/JamesFehon-DTA/claude-civictheme-skills",
-  "repository": "https://github.com/JamesFehon-DTA/claude-civictheme-skills"
+  "repository": "https://github.com/JamesFehon-DTA/claude-civictheme-skills",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_claude_md.py\" --mode prime --repo . --hook-json",
+            "timeout": 10,
+            "statusMessage": "Priming CivicTheme routing"
+          }
+        ]
+      }
+    ]
+  }
 }
