@@ -1,29 +1,32 @@
 <!--
-Paste the section below into the CLAUDE.md of a CivicTheme UIKit,
-design system, or component library repository — i.e. a repo that contains
-packages/sdc/ and packages/twig/ and authors components directly, rather
-than consuming CivicTheme as a base theme.
+This is the UIKit variant of the civictheme-skills managed block.
 
-Do not paste this file verbatim — copy only the "## CivicTheme UIKit
-component authoring" section. Delete this comment block before committing.
+Preferred: run `/civictheme-skills:init` in the repo root – it detects the repo
+type and writes the section below into CLAUDE.md inside managed markers, and
+`/civictheme-skills:update` re-syncs it when the package ships new guidance.
+
+Manual paste: copy only the "## CivicTheme component work" section (everything
+below the closing of this comment). Delete this comment block before committing.
 -->
 
-## CivicTheme UIKit component authoring
+## CivicTheme component work – route through the skills first
 
-Authoring is SDC-first. The canonical toolchain flows SDC → twig via `components:update:sdc` and `components:update:twig`; there is no reverse path. Every new component must be scaffolded in both packages in one pass, with `packages/sdc/` as the source of truth.
+This repo is the CivicTheme UIKit (design system), identified by `packages/sdc/` and `packages/twig/`. It is not a Drupal sub-theme. `packages/sdc/` is the source of truth; `packages/twig/` is its generated derivative.
 
-**Use `civictheme-uikit-component-generator`** for all new atoms, molecules, organisms, and templates in this repo. Do not invoke `civictheme-sdc-generator` — that skill targets Drupal sub-themes and encodes different constraints (Drupal include namespaces, hook integration, `libraryOverrides`).
+Before creating, porting/migrating in, editing (markup/SCSS/JS), adding a variant or type to, or fixing the rendering of any component here, dispatch the matching skill first. Do not hand-author component files, and do not classify a request as "not component work" because it is a port, a one-file edit, or files you already have:
 
-**After generation, run the toolchain sync before treating output as final:**
+- New, ported-in, or extended component (new variant/type/option) → `/civictheme-skills:civictheme-uikit-component-generator`
+- SCSS change to an existing component → `/civictheme-skills:civictheme-uikit-scss-iteration`
+- Validation / pre-PR check → `/civictheme-skills:civictheme-health-check`
 
-```sh
-npm run components:update:sdc   # regenerate authoritative docblocks from .component.yml
-npm run components:update:twig  # regenerate packages/twig/ from SDC source
-npm run validate                # lint + schema + theme-variable checks
-```
+Porting a component from another repo is component work – classify before copying, not after. Adding a new variant or type to an existing component (a new enum value, twig branch, draw routine, story) is component work too.
 
-The generator's twig output is a bootstrap. `components:update:twig` overwrites it with namespace-transformed, docblock-correct content — this is intentional and is what makes the twig package a genuine derivative of SDC.
+**Dispatch the Skill tool – never substitute a Read of SKILL.md.** Reading the markdown reproduces the prose but skips the SDC-vs-twig package routing and project-context capture. If you reach for Read on a CivicTheme SKILL.md, stop and dispatch the Skill instead – even when the user names a downstream skill by hand.
 
-**Always dispatch the Skill tool — never substitute a Read of SKILL.md.** Reading the markdown produces the same prose but skips the SDC-vs-twig package routing and the project-context capture. If you find yourself reaching for the Read tool on a CivicTheme SKILL.md file, stop and dispatch the Skill instead. This applies even when the user explicitly names a downstream skill — UIKit work has three direct-entry skills (`civictheme-uikit-component-generator`, `civictheme-uikit-scss-iteration`, `civictheme-health-check`) and the right one is determined by intent, not by the user repeating a name in the prompt.
+Conventions the skills enforce and hand-coding breaks:
 
-**No `.component.yml` in `packages/twig/`.** The twig docblock is the schema there, generated from the SDC `.component.yml` by `components:update:twig`. Writing a second schema in the twig package creates a divergence the moment either side is edited.
+- `attributes` is the reserved Drupal `Attribute` object, injected automatically. Never declare it under `props`. Render it as `{% if attributes is defined and attributes is not null %}{{- attributes -}}{% endif %}` (see `alert.twig`).
+- Theme variables stay light/dark paired (checked by `npm run validate`).
+- Regenerate the `packages/twig/` derivative with `npm run components:update`; never hand-edit `packages/twig/` component files.
+- `civictheme:` namespace includes become `@organisms/...` (etc.) path namespaces in the twig package via the update script.
+- External vendor JS (e.g. D3) loads via a `.storybook/preview-head.html` plus a static vendor dir; the repo gitignores `vendor`, so committed copies live elsewhere.

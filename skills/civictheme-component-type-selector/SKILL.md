@@ -1,12 +1,28 @@
 ---
 name: civictheme-component-type-selector
 description: >
-  Use this skill whenever the user mentions any change to a CivicTheme component or sub-theme — including bare phrases like "fix the [component]", "tweak the [component]", "update the [component]", "the [component] looks wrong", "wire up the SCSS for X", "make X author-configurable in CKEditor", or "Storybook of X is broken" — as well as explicit phrases like "create a component", "override a component", "scaffold a component", "add a paragraph type", or any CivicTheme SDC work. Required entry point for sub-theme work — always classify before generating, even when the user names a downstream skill. Dispatch this skill via the Skill tool; do not substitute a Read of the SKILL.md file. Handles Drupal sub-theme work only. For new UIKit components, redirect to civictheme-uikit-component-generator. For SCSS edits to existing UIKit components, redirect to civictheme-uikit-scss-iteration. For diagnostics, redirect to civictheme-health-check.
+  Universal front door for ALL CivicTheme component work – both Drupal sub-themes and the CivicTheme UIKit / design system. Detects the repo type first by probing for `packages/sdc/`: present means UIKit (route to the UIKit skills); absent means a sub-theme (classify into a sub-theme pattern). Use whenever the user mentions any change to a CivicTheme component – including bare phrases like "fix the [component]", "tweak the [component]", "the [component] looks wrong", "wire up the SCSS for X", "Storybook of X is broken" – and explicit ones like "create a component", "port/migrate/copy a component in from another repo", "override a component", "scaffold a component", "add a paragraph type", or "add a new variant/type/option to X". Always classify before generating, even when the user names a downstream skill or already has the files. Dispatch via the Skill tool; do not substitute a Read of the SKILL.md file.
 ---
 
 # CivicTheme Component Type Selector
 
-Classification-only skill. Determine the correct component pattern and recommend the next skill. Do not generate files.
+Classification-only skill. Determine the repo type, then either route UIKit work to the UIKit skills or classify sub-theme work into a component pattern and recommend the next skill. Do not generate files.
+
+## First: detect the repo type – UIKit vs sub-theme
+
+Probe for `packages/sdc/` at the repo root **before** anything else. This one signal decides everything downstream; do not skip it because the request "sounds like" a sub-theme edit.
+
+- **`packages/sdc/` present → CivicTheme UIKit / design system.** Do not run the sub-theme classifier. Route straight to the matching UIKit skill (table below) and exit. This is the primary handoff, not a fallback.
+
+  | UIKit intent | Route to |
+  |---|---|
+  | Create a new component; **port / migrate / copy a component in** from another repo; **add a new variant / type / option** to an existing component (new enum value, twig branch, draw routine, story) | `civictheme-uikit-component-generator` |
+  | SCSS-only change to an existing component (spacing, colour, typography, flex/grid, selector-scoped overrides) | `civictheme-uikit-scss-iteration` |
+  | Validation / diagnostics / pre-PR check | `civictheme-health-check` |
+
+  Porting or extending a component **is** component work – classify before copying or hand-editing, not after. "I already have the files" and "it's just one file" do not move work out of these skills.
+
+- **`packages/sdc/` absent → Drupal sub-theme.** Continue to the classification below.
 
 ## Platform constraints (GovCMS SaaS)
 
@@ -16,7 +32,7 @@ Custom modules are unavailable on GovCMS SaaS. The theme layer is the only PHP e
 
 ## Required project context
 
-Confirm before classifying — ask the user only if values are unknown:
+Confirm before classifying – ask the user only if values are unknown:
 
 | Variable | Description | Example |
 |---|---|---|
@@ -26,31 +42,26 @@ Confirm before classifying — ask the user only if values are unknown:
 | `[CIVICTHEME_VERSION]` | CivicTheme UIKit version installed | `1.12.2` (default if unknown) |
 
 Version-specific behaviour that downstream skills must branch on:
-- `|raw` filter removed in 1.12.2 — never emit in generated Twig when version ≥ 1.12.2
-- `{% extends %}` unsupported from 1.11.0 onward — overrides must be full replacements, never extensions
+- `|raw` filter removed in 1.12.2 – never emit in generated Twig when version ≥ 1.12.2
+- `{% extends %}` unsupported from 1.11.0 onward – overrides must be full replacements, never extensions
 
 If the user's prompt already contains values that satisfy these fields, confirm them back explicitly before passing downstream. Never pre-fill silently.
 
-Note: `\Drupal::` static calls are unrestricted on GovCMS SaaS (confirmed phpstan.neon, scaffold-tooling 6.0.7). Vague warnings about SaaS PHP restrictions refer to the banned function list (shell execution, direct DB, debug output) — not to Drupal API calls.
+Note: `\Drupal::` static calls are unrestricted on GovCMS SaaS (confirmed phpstan.neon, scaffold-tooling 6.0.7). Vague warnings about SaaS PHP restrictions refer to the banned function list (shell execution, direct DB, debug output) – not to Drupal API calls.
 
-## Out of scope — redirect immediately
+## UIKit work – route via the detection table above
 
-Three skills in this repo are deliberate direct-entry points. They are NOT part of the five-pattern classifier and must not appear in `recommended_next_skill`. When the user's intent matches one, exit the selector immediately — do not classify further — and name the skill explicitly.
+When `packages/sdc/` is present, the three UIKit skills are direct-entry points: `civictheme-uikit-component-generator` (new, ported-in, or extended components), `civictheme-uikit-scss-iteration` (SCSS-only edits to existing components), and `civictheme-health-check` (diagnostics). They are NOT part of the sub-theme classifier and must never appear in `recommended_next_skill`. Route to them from the detection table at the top of this file and exit; do not run the six-pattern classifier on UIKit work.
 
-**UIKit source authoring (new components)** — user wants to add a component to the CivicTheme UIKit, design system, design library, or component library itself, not to a Drupal sub-theme. Redirect to `civictheme-uikit-component-generator`.
-- *Why direct entry:* UIKit authoring is SDC-first against `packages/sdc/` + `packages/twig/` and uses a different output contract from the sub-theme generators. Routing through the classifier would collapse the two contracts.
+`civictheme-health-check` is also the diagnostics route in a **sub-theme** repo ("run the checks", "validate the theme", "sanity pass before commit") – it is not a component-pattern handler, so redirect rather than classify.
 
-**UIKit SCSS iteration (existing components)** — user wants to modify the SCSS of an existing UIKit component (spacing, colour, flex/grid layout, selector-scoped overrides on a sub-component inside a parent). Redirect to `civictheme-uikit-scss-iteration`. The distinguishing signal is that the component already exists in `packages/sdc/components/`; the edit is to one of its `.scss` files, not a Drupal sub-theme override.
-- *Why direct entry:* Operates on UIKit source, not sub-theme overrides, and uses the `dist:sdc` → `components:update` → `dist:twig` iteration loop. Sub-theme style patterns do not apply.
+## Out of scope – redirect immediately
 
-**Diagnostics / health check** — user wants a status or sanity report rather than a component change (phrases like "run the checks", "validate the theme", "health-check the repo", "sanity pass before commit"). Redirect to `civictheme-health-check`.
-- *Why direct entry:* Diagnostics is not a component-pattern handler. It runs a fixed pipeline (lint → validate → theme-variable-usage → a11y grep) across the whole project and does not produce a component. There is no meaningful classification to perform.
-
-**Portable / self-contained components** — components with their own CSS token namespace (`--[prefix]-*`), hardcoded fallbacks alongside CivicTheme token references, and explicit multi-site portability intent. These intentionally bypass the CivicTheme mixin system and are not UIKit components. No skill covers them — tell the user they are out of scope. See `memory/portable_vs_uikit_components.md` for the full boundary definition.
+**Portable / self-contained components** – components with their own CSS token namespace (`--[prefix]-*`), hardcoded fallbacks alongside CivicTheme token references, and explicit multi-site portability intent. These intentionally bypass the CivicTheme mixin system and are not UIKit components. No skill covers them – tell the user they are out of scope. See `memory/portable_vs_uikit_components.md` for the full boundary definition.
 
 Signals that distinguish portable from UIKit/sub-theme work:
 - Own `--prefix-*` token namespace declared in SCSS
-- `var(--ct-*, #fallback)` pattern — CivicTheme tokens used as optional, not required
+- `var(--ct-*, #fallback)` pattern – CivicTheme tokens used as optional, not required
 - Explicitly described as portable, self-contained, or multi-site
 - Lives under its own Drupal SDC namespace (e.g. `dga:component-name`)
 
@@ -62,7 +73,7 @@ Signals that distinguish portable from UIKit/sub-theme work:
 |---|---|
 | `new_sdc_component` | Brand-new UI not present in CivicTheme |
 | `override_existing_civictheme_component` | Replace markup, structure, or behaviour of an existing CivicTheme component |
-| `style_only_override_existing_civictheme_component` | Change appearance of a specific component — colour, spacing, typography on that component only; no markup changes |
+| `style_only_override_existing_civictheme_component` | Change appearance of a specific component – colour, spacing, typography on that component only; no markup changes |
 | `variable_tokens_only` | Change base design tokens (palette colours, spacing scale, typography ramp) that apply project-wide; no component override needed |
 | `js_css_enhancement_without_sdc_component` | Add JS/CSS behaviour to existing markup; no new SDC |
 | `paragraph_or_content_element_using_civictheme_component` | Drupal content-authoring pattern wrapping an SDC component |
@@ -72,7 +83,7 @@ Signals that distinguish portable from UIKit/sub-theme work:
 1. New UI pattern not present in CivicTheme → `new_sdc_component`
 2. Change markup, structure, or logic of an existing component → `override_existing_civictheme_component`
 3. Change the appearance of a specific component (its colour, spacing, border, typography) → `style_only_override_existing_civictheme_component`
-4. Change base tokens only — palette, spacing scale, typography ramp — with no component-scoped override needed → `variable_tokens_only`
+4. Change base tokens only – palette, spacing scale, typography ramp – with no component-scoped override needed → `variable_tokens_only`
 5. Add JS/CSS to existing markup without creating an SDC → `js_css_enhancement_without_sdc_component`
 6. Drupal content authoring pattern wrapping an SDC component → `paragraph_or_content_element_using_civictheme_component`
 7. Ambiguous → ask exactly one question: "Are you changing markup/behaviour, appearance only, or creating a new authoring pattern?"
@@ -80,21 +91,21 @@ Signals that distinguish portable from UIKit/sub-theme work:
 
 **Style-first rule:** If the user describes changes that sound structural but a style-only variable override would satisfy the actual need, classify as `style_only_override_existing_civictheme_component` and explain why before proceeding.
 
-**Tokens vs component-scoped styling:** `variable_tokens_only` is reserved for *base-token* edits — changes to the project's colour palette, spacing scale, or typography ramp that ripple through every component that consumes those tokens. Use `style_only_override_existing_civictheme_component` when the appearance change is scoped to a specific component (even if implemented via variable overrides in that component's scope). The discriminator is "base tokens, zero component override needed" vs "this component looks different". Both route to `civictheme-style-override`, but the classifier must distinguish them so the downstream skill writes to the correct layer.
+**Tokens vs component-scoped styling:** `variable_tokens_only` is reserved for *base-token* edits – changes to the project's colour palette, spacing scale, or typography ramp that ripple through every component that consumes those tokens. Use `style_only_override_existing_civictheme_component` when the appearance change is scoped to a specific component (even if implemented via variable overrides in that component's scope). The discriminator is "base tokens, zero component override needed" vs "this component looks different". Both route to `civictheme-style-override`, but the classifier must distinguish them so the downstream skill writes to the correct layer.
 
 ## Reference files
 
 Read before classifying:
 
-- `references/component-taxonomy.md` — all CivicTheme components by tier; consult to confirm whether the user's component already exists in the base theme before selecting `new_sdc_component` vs `override_existing_civictheme_component`
+- `references/component-taxonomy.md` – all CivicTheme components by tier; consult to confirm whether the user's component already exists in the base theme before selecting `new_sdc_component` vs `override_existing_civictheme_component`
 
-## Related skills — diagnostics and UIKit iteration
+## Related skills – direct-entry (not in the classifier)
 
-These skills are **not** part of the five-pattern classifier and do not appear in `recommended_next_skill`. They exit the selector early, with or without classification. Name them explicitly when the user's intent matches, instead of forcing a classification that does not fit.
+These exit the selector early and never appear in `recommended_next_skill`. Route to them from the detection table at the top of this file; the summaries here are the routing cues.
 
-- **`civictheme-health-check`** — diagnostics pass (lint → validate → theme-variable-usage check → a11y anti-pattern grep) that produces a consolidated report. Works in both sub-theme and UIKit contexts. Route here when the user asks to "run the checks", "validate the theme", "health-check the repo", "sanity pass before commit", or otherwise wants a status report rather than a component change. It is not a component-pattern handler — do not attempt to classify; redirect.
-- **`civictheme-uikit-scss-iteration`** — SCSS edits on existing UIKit components (also named in §Out of scope above). Route here when the user wants to adjust spacing, colour, typography, flex/grid layout, or selector-scoped overrides on a component that already exists in `packages/sdc/components/`.
-- **`civictheme-uikit-component-generator`** — authoring a new UIKit component (also named in §Out of scope above). Route here when the user wants to add a brand-new component to `packages/sdc/` / `packages/twig/`.
+- **`civictheme-uikit-component-generator`** – authoring in the UIKit (`packages/sdc/`): a brand-new component, **porting/migrating/copying a component in** from another repo, or **adding a new variant/type/option** (new enum value, twig branch, draw routine, story) to an existing component.
+- **`civictheme-uikit-scss-iteration`** – SCSS-only edits to a component that already exists in `packages/sdc/components/` (spacing, colour, typography, flex/grid, selector-scoped overrides).
+- **`civictheme-health-check`** – diagnostics pass (lint → validate → theme-variable-usage check → a11y anti-pattern grep), in both sub-theme and UIKit contexts. Route here for "run the checks", "validate the theme", "sanity pass before commit" – a status report, not a component change.
 
 ## Output contract
 
@@ -109,4 +120,4 @@ project_context:
 recommended_next_skill: <civictheme-sdc-generator | civictheme-override-generator | civictheme-style-override | civictheme-js-enhancement | civictheme-paragraph-generator>
 ```
 
-Pass `project_context` verbatim to the next skill — all downstream skills require these values and expect them unchanged from the selector output.
+Pass `project_context` verbatim to the next skill – all downstream skills require these values and expect them unchanged from the selector output.
