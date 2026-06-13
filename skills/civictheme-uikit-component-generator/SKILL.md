@@ -33,6 +33,15 @@ The twig-package output is intentionally ephemeral. `components:update:twig` ove
 
 Pure appearance tweaks to an *existing* variant, with no schema/markup/JS change, belong to `civictheme-uikit-scss-iteration` instead.
 
+## Reuse gate – before authoring or fixing any component JS
+
+**Run this gate before writing, porting, or fixing a single line of component JavaScript.** Ask: *does a core CivicTheme behaviour already provide this interaction?* CivicTheme ships behaviours for show/hide, accordion, dismiss/overlay, breakpoint-gating, sticky/reveal-on-scroll, tabs, popover, and skip-links – listed with their data-attribute contracts in `references/core-behaviours.md`.
+
+- **If a primitive matches** – emit its data-attribute markup and **delete the bespoke JS**. Do not generate a custom constructor, and do not fortify an existing bespoke script (a `MutationObserver`, a `Drupal.behaviors` wrapper) when the real fix is to replace it with the primitive. Example: a mobile filter toggle that hand-rolls a button + panel + show/hide script is `collapsible` gated by `responsive` – the same markup `accordion.twig` uses (see the anti-pattern in `references/core-behaviours.md`).
+- **Only if no primitive matches** – author new JS, following `references/js-patterns.md` (init timing and the last-resort dual-init pattern) and verify it with `references/js-verification.md`.
+
+This gate applies to porting too: a donor component's bespoke interaction script is a spec to re-evaluate against the primitives, not code to copy in.
+
 ## Reserved props – never declare `attributes`
 
 `attributes` is the reserved `Drupal\Core\Template\Attribute` object. SDC injects it automatically at render; declaring it under `props` (e.g. `attributes: { type: string }`) **fails Drupal/CivicTheme SDC validation**. No CivicTheme component declares it.
@@ -59,7 +68,9 @@ Read before generating:
 
 - `references/twig-patterns.md` – docblock format, prop validation, class composition, content guard, SDC `civictheme:` vs twig-package `@tier/` namespacing
 - `references/scss-patterns.md` – design system mixins, component-theme pattern, geometry tokens, banned patterns, contextual override scoping, `<fieldset>` and flex gotchas
-- `references/js-patterns.md` – constructor + root-level `querySelectorAll` init, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when emitting JS behaviour)
+- `references/core-behaviours.md` – the core CivicTheme behaviours (collapsible, flyout, responsive, scrollspy, tabs, tooltip, skip-to-target) with their data-attribute contracts. **Read before emitting or fixing any component JS** – if a primitive already provides the interaction, reuse its markup and delete the bespoke JS (see the reuse gate below)
+- `references/js-patterns.md` – the reuse gate, when the one-time top-level `querySelectorAll` init actually runs (00-base bundle vs per-component auto-discovery) and the last-resort dual-init pattern, `data-collapsible-collapsed` state attribute, collapsible panel `!important` pitfall (read when emitting JS behaviour)
+- `references/js-verification.md` – how to verify JS init and toggles without the attribute-serialisation and `transitionend`-timing traps (read when checking that emitted JS behaves)
 - `references/component-yml-patterns.md` – SDC `.component.yml` schema (including `$schema`), enum values, standard props, sync with the twig docblock
 - `references/storybook-patterns.md` – story file structure for the SDC side; only include when Storybook is confirmed
 - `references/toolchain.md` – canonical sync loop (`components:update:sdc` → `components:update:twig` → `validate`), Husky behaviour, `components:check` semantics, sync exclusions, asset discovery for pure-CSS atoms and raw-HTML components

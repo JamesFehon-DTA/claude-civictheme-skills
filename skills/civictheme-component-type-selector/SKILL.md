@@ -18,9 +18,14 @@ Probe for `packages/sdc/` at the repo root **before** anything else. This one si
   |---|---|
   | Create a new component; **port / migrate / copy a component in** from another repo; **add a new variant / type / option** to an existing component (new enum value, twig branch, draw routine, story) | `civictheme-uikit-component-generator` |
   | SCSS-only change to an existing component (spacing, colour, typography, flex/grid, selector-scoped overrides) | `civictheme-uikit-scss-iteration` |
+  | **Storybook / build config** – `.storybook/` files (`preview.js`, `main.js`, `manager.js`, `theme.js`), autodocs/MDX, addon registration, or a story-only API migration | `config` – short route below, **not** the generator |
   | Validation / diagnostics / pre-PR check | `civictheme-health-check` |
 
-  Porting or extending a component **is** component work – classify before copying or hand-editing, not after. "I already have the files" and "it's just one file" do not move work out of these skills.
+  Porting or extending a component **is** component work – classify before copying or hand-editing, not after. "I already have the files" and "it's just one file" do not move work out of these skills. But before routing any **interaction / component-JS** request to the generator, run the reuse gate immediately below.
+
+  **Reuse gate – fire before routing component-JS work.** When the request is to fix or add an interaction (a toggle, show/hide, accordion, dismiss, sticky, reveal-on-scroll), ask first: *does a core CivicTheme behaviour already provide it?* CivicTheme ships behaviours for exactly these – see `references/core-behaviours.md`. If a primitive matches, the fix is to emit its data-attribute markup and **delete the bespoke JS**, not to route to the generator to author or fortify a custom script. Only route to `civictheme-uikit-component-generator` when no primitive matches. Canonical trap: a mobile filter toggle hand-rolled as a button + panel + custom show/hide script is `collapsible` gated by `responsive` (the same markup `accordion.twig` uses) – routing it to the generator produced a `MutationObserver` + `Drupal.behaviors` bolt-on instead of deleting the bespoke code.
+
+  **`config` route.** `.storybook/` and story-API changes are config, validated by build/lint, not component-pattern work – do not force them through the generator's component contract. Edit the named file in place (e.g. `tags: ['autodocs']` in `preview.js`; the `*.mdx` glob and `@storybook/addon-a11y` registration in `main.js`; `parameters.backgrounds.default` → `globals.backgrounds.value` in a `.stories.js`), then validate with `npm run build` / `npm run lint`, or run `civictheme-health-check` for a full pass. Exit the selector; emit `component_pattern: config` (see output contract).
 
 - **`packages/sdc/` absent → Drupal sub-theme.** Continue to the classification below.
 
@@ -98,6 +103,7 @@ Signals that distinguish portable from UIKit/sub-theme work:
 Read before classifying:
 
 - `references/component-taxonomy.md` – all CivicTheme components by tier; consult to confirm whether the user's component already exists in the base theme before selecting `new_sdc_component` vs `override_existing_civictheme_component`
+- `references/core-behaviours.md` – the core CivicTheme behaviours (collapsible, flyout, responsive, scrollspy, tabs, tooltip, skip-to-target) with their data-attribute contracts; read before routing any interaction / component-JS request, to run the reuse gate (an existing primitive beats authoring new JS)
 
 ## Related skills – direct-entry (not in the classifier)
 
@@ -121,3 +127,5 @@ recommended_next_skill: <civictheme-sdc-generator | civictheme-override-generato
 ```
 
 Pass `project_context` verbatim to the next skill – all downstream skills require these values and expect them unchanged from the selector output.
+
+**UIKit and `config` exits do not use this contract.** When `packages/sdc/` is present you route via the detection table and exit (see "UIKit work"); the six `component_pattern` values and `recommended_next_skill` are sub-theme-only. A `.storybook/` or story-API change is a UIKit exit – emit `component_pattern: config` with the named file and the build/lint (or `civictheme-health-check`) validation step, and no `recommended_next_skill`.
