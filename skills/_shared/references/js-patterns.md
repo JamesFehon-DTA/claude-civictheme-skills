@@ -128,4 +128,4 @@ Same rule applies to `visibility: visible !important`, `height: auto !important`
 
 ## Verifying the behaviour
 
-When checking whether JS initialised or a toggle worked, do not read an attribute string and infer state – the Storybook HTML addon serialises post-init attribute values, and `collapsible` updates `aria-expanded` only on `transitionend` (~500ms). See `js-verification.md` for the two traps and the side-effect / animation-aware checks that avoid them.
+When checking whether JS initialised or a toggle worked, read the **live DOM** – not the Storybook HTML-addon panel, which serialises post-init markup and so diverges from the bare source. And note that on an *animated* toggle `collapsible` sets `aria-expanded` only on `transitionend` (default 500ms), so don't read it on the same tick as the click. See `js-verification.md` for both traps and the checks that avoid them.
