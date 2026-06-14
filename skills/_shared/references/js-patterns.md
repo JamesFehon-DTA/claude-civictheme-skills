@@ -52,9 +52,11 @@ Use `data-` attribute selectors — not classes — for JS targeting so markup c
 
 ## When the one-time top-level init actually runs
 
-The top-level `document.querySelectorAll(...).forEach(new X())` works for **`00-base` behaviours** because they are bundled into `civictheme.base` and imported eagerly by `packages/sdc/.storybook/preview.js` (`import '../dist/civictheme.base'`). That bundle evaluates once, before any story, so its `querySelectorAll` sweep finds every matching root already in the document.
+Observed asymmetry in Storybook: a top-level `document.querySelectorAll(...).forEach(new X())` sweep initialises **`00-base` behaviours** but **not** a per-component file. Verified both ways: `collapsible` injects its `.ct-collapsible__icon` nodes in the accordion story, whereas the original `search-results.js` never set its `data-search-results="true"` marker.
 
-A **per-component `.js`** does NOT get the same free initialisation. The Storybook SDC plugin (`packages/sdc/.storybook/sdc-plugin.js`) auto-discovers a component's `.js` via its `.twig` import, but the module's top-level `querySelectorAll().forEach()` runs at **module-evaluation time, which is before the story mounts its markup into the DOM**. The sweep finds nothing, and the component looks uninitialised even though the file loaded.
+The **per-component** failure is the verified part. The Storybook SDC plugin (`packages/sdc/.storybook/sdc-plugin.js`) auto-discovers a component's `.js` via its `.twig` import, but the module's top-level sweep runs at **module-evaluation time, before the story mounts its markup into the DOM** – so it matches nothing and nothing initialises, even though the file loaded.
+
+`00-base` files are bundled into `civictheme.base` and imported eagerly by `packages/sdc/.storybook/preview.js` (`import '../dist/civictheme.base'`), and empirically their sweep *does* catch story markup. **Why** it does – the bundle re-running, or render preceding its evaluation – is unverified; don't lean on a "boot-time sweep finds roots already in the document" explanation, which would contradict the per-component timing above. Rely on the asymmetry, not a theory of its cause: **do not write a per-component file that depends on a one-time top-level sweep.**
 
 When a per-component file legitimately needs JS (i.e. `core-behaviours.md` has no matching primitive – check that first), initialise so it survives both first mount and later DOM insertion:
 
