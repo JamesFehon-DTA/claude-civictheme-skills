@@ -34,6 +34,16 @@ jobs:
       - name: Lint skills
         run: python scripts/lint-skills.py
 
+      - name: Verify version base matches latest tag
+        run: |
+          base=$(python -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          tag=$(git describe --tags --abbrev=0 2>/dev/null || echo none)
+          if [ "$tag" != none ] && [ "v$base" != "$tag" ]; then
+            echo "::error::plugin.json version $base != latest tag $tag. The release bumps FROM plugin.json, so a drifted base overshoots. Reset .claude-plugin/plugin.json to ${tag#v} (the workflow owns the bump) before releasing."
+            exit 1
+          fi
+          echo "version base $base is clean against latest tag $tag"
+
       - name: Bump version in plugin.json
         env:
           RELEASE_LEVEL: ${{ github.event.inputs.release-level }}
@@ -64,11 +74,21 @@ jobs:
           git config --global user.email "${GITHUB_ACTOR_ID}+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Commit, tag, and push
+      - name: Commit, tag, verify, then push
         run: |
           git add .claude-plugin/plugin.json
           git commit -m "Released claude-civictheme-skills v${NEW_VERSION}."
           git tag "v${NEW_VERSION}"
+          # GUARANTEE: the tag must point at a commit whose plugin.json == the tag,
+          # BEFORE anything reaches GitHub. Claude consumes the manifest at the
+          # tag/release, so a mismatched or un-bumped plugin.json must never ship.
+          tagged=$(git show "v${NEW_VERSION}:.claude-plugin/plugin.json" | python -c "import json,sys;print(json.load(sys.stdin)['version'])")
+          if [ "$tagged" != "${NEW_VERSION}" ]; then
+            echo "::error::tag v${NEW_VERSION} points at plugin.json version $tagged — refusing to push a mismatched release."
+            git tag -d "v${NEW_VERSION}"
+            exit 1
+          fi
+          # Branch first (carries the bump commit), then the tag — both already verified.
           git push origin HEAD:${{ github.ref_name }}
           git push --tags
 

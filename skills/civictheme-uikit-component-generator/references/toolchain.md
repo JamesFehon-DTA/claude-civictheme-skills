@@ -44,9 +44,11 @@ Step order matters. `validate` depends on the twig package reflecting the curren
 |---|---|
 | `.component.yml` | The twig-package docblock is the schema in that package; a second YAML would diverge on first edit |
 | `.css` | The twig package has no per-component CSS — all styles compile into the `civictheme.storybook.css` bundle |
-| `.stories.twig` | Story fixtures are SDC-side only; the twig package uses `.stories.js` render functions |
+| `.stories.twig` | Not transformed by the sync, but the file **does** exist in both packages and is hand-maintained on the twig side (see note) |
 
 Everything else — twig, JS, SCSS — is overwritten on every sync. Upstream CivicTheme ships no mechanism to preserve intentional SDC-vs-twig drift in non-excluded files; local divergence in those files is a known sharp edge of the one-way sync model. The typical trigger is a `.stories.js` that needs SDC-specific imports the twig package cannot accept — see "Asset discovery" below.
+
+**`.stories.twig` are hand-maintained, not SDC-only.** Both packages carry the same story-twig fixtures (`colors`, `typography`, `data-vis`, …), but the sync skips them (this exclusion is upstream CivicTheme, not fork-local), so the twig copy is maintained by hand. Most are self-contained – no component `{% include %}` – so the SDC and twig copies are byte-identical and the exclusion costs nothing (`colors.stories.twig` diffs to nothing between packages). The one exception is a fixture that includes a component: `data-vis.stories.twig` pulls in `summary-list`, so its twig copy needs the `civictheme:` → `@tier/` namespace transform applied by hand – `{% include 'civictheme:summary-list' %}` in SDC becomes `{% include '@atoms/summary-list/summary-list.twig' %}` in twig. The sync will not do this for an excluded file, so after adding or editing a component-including `.stories.twig`, transform its twig copy by hand.
 
 ---
 
@@ -74,7 +76,19 @@ This is the upstream sharp edge. Upstream CivicTheme has no sync-skip mechanism,
 2. Hand-maintain the twig `.stories.js` without them.
 3. After every `components:update:twig` run, remove the imports from the twig copy again.
 
-Forks of the UIKit sometimes patch the sync script to honour a skip marker, which automates step 3; that is not part of upstream CivicTheme and should not be assumed by skill-scaffolded components. Flag step 3 as a required post-generation action whenever the generator emits the SDC-side imports.
+**DTA-fork escape hatch.** The DTA `civictheme-uikit` fork patches `components:update:twig` to honour an `@sync-ignore` marker in the first 2 KB of the destination file, which automates step 3 – add it to the twig `.stories.js` docblock and the sync preserves the drift instead of overwriting it:
+
+```
+ * @sync-ignore
+ * Intentionally drifts from SDC: the SDC version imports per-component .css for
+ * sdc-plugin discovery; the twig build resolves styles globally, no such files.
+```
+
+This is fork-local, not upstream CivicTheme – a component targeted at upstream must not assume it. Whenever the generator emits the SDC-side imports, flag step 3 (or the `@sync-ignore` marker on a fork that has it) as a required post-generation action.
+
+## Fonts and vendored assets in the SDC Storybook
+
+A SCSS swap to a self-hosted font renders in the twig Storybook but 404s in the **SDC** Storybook: `civictheme.base.css` bakes the Drupal asset path, and the build only path-swaps assets in the twig flow. The body still looks right because the font falls back to a metric-identical system face, masking the failure. Re-emit the `@font-face` (via `ct-font-include()`) in `packages/sdc/components/style.stories.scss` – it is compiled with the Storybook `/assets/` path and already imported by SDC `preview.js` – while keeping `#{$ct-assets-directory}` in `variables.base.scss` so each build context fills its own path. Do not add a staticDir.
 
 ---
 

@@ -20,6 +20,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/allow_plugin_bundle_reads.sh\" \"${CLAUDE_PLUGIN_ROOT}\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }

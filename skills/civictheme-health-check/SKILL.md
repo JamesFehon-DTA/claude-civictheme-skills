@@ -1,6 +1,6 @@
 ---
 name: civictheme-health-check
-description: Run the full CivicTheme validation sequence (lint → validate → theme-variable usage check → a11y anti-pattern grep → reserved-prop check) and consolidate the results into a single structured report. Use when the user asks to "run checks", "run validation", "health-check the theme", "verify the component set", "lint and validate", or wants a pre-commit / pre-PR sanity pass across the whole repo. Works in both a Drupal sub-theme and a CivicTheme UIKit / design-system repo – detects which context it is in by probing for `packages/sdc/` and branches the command set accordingly. Not a component-pattern handler – this is a diagnostics skill and is not routed through `civictheme-component-type-selector`.
+description: Run the full CivicTheme validation sequence (lint → validate → theme-variable usage check → a11y anti-pattern grep → reserved-prop check → Storybook SB8-pattern grep) and consolidate the results into a single structured report. Use when the user asks to "run checks", "run validation", "health-check the theme", "verify the component set", "lint and validate", or wants a pre-commit / pre-PR sanity pass across the whole repo. Works in both a Drupal sub-theme and a CivicTheme UIKit / design-system repo – detects which context it is in by probing for `packages/sdc/` and branches the command set accordingly. Not a component-pattern handler – this is a diagnostics skill and is not routed through `civictheme-component-type-selector`.
 ---
 
 # CivicTheme Health Check
@@ -98,6 +98,25 @@ Procedure:
 
 Status is `pass` when no `*.component.yml` declares `attributes` under `props`, `fail` on any hit, `not_configured` when there are no `*.component.yml` files at all.
 
+### Step 6 – Storybook SB8-pattern grep (when stories exist)
+
+Storybook 8 background patterns are **silently inert** on Storybook 10 – no error, no console warning, the canvas just renders white while the source still looks correct. They survive copy-paste and muscle memory, so only a grep gate catches them. Derive the banned shapes from the SB10 compatibility table in `references/storybook-patterns.md` at run time (re-read it each run so the table stays the source of truth, the way step 4 derives from accessibility.md).
+
+Scope to `*.stories.js`:
+
+- UIKit: `packages/sdc/components/` (and `packages/twig/components/` – the twig copies carry the same patterns).
+- Sub-theme: the sub-theme `components/` tree.
+
+Banned shapes from the current table:
+
+- `backgrounds: { default` – the inert SB8 background selector. Fix: `globals: { backgrounds: { value: 'dark' } }` at story level.
+- `parameters.backgrounds.values` – SB8 background registration. Fix: `parameters.backgrounds.options: { key: { name, value } }`.
+- `from '@storybook/preview-api'` – SB8 import path. Fix: `from 'storybook/preview-api'`.
+
+For each hit record the file, line, matched text, and the SB10 replacement, citing `references/storybook-patterns.md`. Status is `fail` on any hit, `not_configured` when the repo has no `*.stories.js`.
+
+On the UIKit side `npm run validate` already runs `validate-stories-backgrounds.js`, so a step-2 `validate` failure and a step-6 hit on the `backgrounds: { default` shape are the same defect – note the overlap rather than double-counting it. The grep is the **only** gate on the sub-theme side, where `validate` is usually absent – that is where this step earns its place.
+
 ## Context-specific additions
 
 Run these in addition to the baseline four, only when the context matches.
@@ -167,7 +186,15 @@ steps:
       - file: packages/sdc/components/03-organisms/chart/chart.component.yml
         key_path: props.properties.attributes
         message: "attributes is the reserved Drupal Attribute object – remove from props; render with the {% if attributes is defined and attributes is not null %}{{- attributes -}}{% endif %} guard (see alert.twig)"
-summary: "3 failures: validate (1 missing variable), a11y grep (1 hit on rule A), reserved-prop check (attributes under props in chart). All other steps pass or not-configured."
+  - name: stories_sb8_grep
+    source_rules_file: skills/_shared/references/storybook-patterns.md
+    status: fail
+    findings:
+      - file: packages/sdc/components/03-organisms/chart/chart.stories.js
+        line: 88
+        match: "backgrounds: { default: 'Dark' }"
+        fix: "globals: { backgrounds: { value: 'dark' } } at story level (SB10)"
+summary: "4 failures: validate (1 missing variable), a11y grep (1 hit on rule A), reserved-prop check (attributes under props in chart), stories SB8-grep (1 inert backgrounds in chart). All other steps pass or not-configured."
 ```
 
 Every step appears in the report even when it passes or is not configured – a missing step in the output is ambiguous (did it fail? was it skipped? did the skill forget?). An explicit `not_configured` with a one-line `note` is the readable form.
@@ -178,6 +205,7 @@ The `summary` line is the human-readable digest – one sentence, failure-first.
 
 - `references/accessibility.md` – **required reading for step 4.** The a11y grep step builds its patterns from the rules here at run time. Do not hardcode rule shapes; re-derive them every run so a11y.md additions land automatically.
 - `references/variables-pipeline.md` – cite from step 2 and step 3 failure entries. The four-stage pipeline explains why a "missing variable" failure from `validate` or `validate-theme-variable-usage` is almost always a stage-3 gap (variable not declared in `components/variables.components.scss`).
+- `references/storybook-patterns.md` – **required reading for step 6.** The SB8-pattern grep derives its banned shapes and SB10 replacements from the compatibility table here; re-read it each run so table changes land automatically.
 
 ## Out of scope
 
