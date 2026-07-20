@@ -77,6 +77,18 @@ This dual-init pattern (`initAll(context)` + `Drupal.behaviors` + `MutationObser
 
 ---
 
+## The runtime bundle must stay export-free — no top-level `import` / `export`
+
+Component JS ships to the browser as a **classic script**, not an ES module. The build concatenates every component's `.js` into one runtime bundle (`dist/scripts.drupal.base.js` for Drupal; `civictheme.base.js` for static-site consumers), and it is loaded with a plain `<script>` — never `type="module"`. A classic script cannot parse a top-level `export`, and one stray `export` at the top level **aborts the whole concatenated bundle** — so *every* CivicTheme behaviour on the page dies, not just the file that leaked it. The symptom is "none of the JS ran"; the console shows `SyntaxError: Unexpected token 'export'`.
+
+**Rule:** author component JS with **no top-level `import` / `export`.** Share via globals (`window.DgaFilterableTable`), `Drupal.behaviors`, and `once()` — the patterns above — not module syntax. This is why the authoring shape is a global constructor + `Drupal.behaviors`, not `export function init()`.
+
+This bites hardest with code ported from an ESM-first source (e.g. chart modules authored for Vite). Such code renders fine in Storybook — that world *is* ESM/Vite — then breaks the moment the same bundle is loaded as a classic script at runtime. The DTA `dga-dl` site hit exactly this: its UIKit sync had to `code.replace(/^export\s+/gm, '')` to strip `export`s out of the storybook bundle before an Astro `BaseLayout` could load it as a classic `<script>` (the fix that unbroke the mobile menu tray). That regex is a **downstream band-aid** — the invariant it enforces is the one to author against: keep the runtime bundle free of module syntax. See `civictheme-uikit-component-generator/references/toolchain.md` → "JS output — two bundles and the classic-script contract".
+
+**`.stories.js` are the one exception.** They live only in the Vite/Storybook world, are never concatenated into the runtime bundle, and *should* use ESM `import` (`import X from './x.twig'`). Module syntax is correct there and only there.
+
+---
+
 ## `data-collapsible-collapsed` controls state — not `aria-expanded`
 
 CivicTheme's collapsible primitive is driven by `data-collapsible-collapsed="true" | "false"` on the root element. CSS rules key off that attribute to hide and show the panel, and the JS flips the attribute on toggle.

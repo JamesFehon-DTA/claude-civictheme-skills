@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0
+
+Documents the UIKit's two JS build worlds and the classic-script contract that authored component JS must honour.
+
+- **`toolchain.md` now describes the two JS bundles** (`civictheme-uikit-component-generator/references/toolchain.md`, symlinked into `civictheme-uikit-scss-iteration`). The UIKit ships JS through two incompatible build worlds: the Storybook/Vite bundle (`civictheme.storybook.js`, ESM, carries top-level `export`s) and the runtime bundle (`civictheme.base.js` / Drupal's `dist/scripts.drupal.base.js`, classic script, loaded via a plain `<script>` — never `type="module"`). A stray top-level `export` in the runtime bundle throws `SyntaxError: Unexpected token 'export'` and aborts the *entire* bundle, silently killing every CivicTheme behaviour. New section covers the failure mode, where the real fix belongs (upstream build, not a downstream regex), and the `dga-dl` `stripEsmExports` sync patch as the band-aid it is.
+- **`js-patterns.md` now states the runtime-bundle invariant** (`_shared/references/js-patterns.md`, shared by every JS-emitting skill). Author component JS with no top-level `import` / `export`; share via globals, `Drupal.behaviors`, and `once()`. `.stories.js` are the sole exception — they live only in the Vite/Storybook world and should use ESM `import`. Flags the common trap of porting ESM-first code (e.g. Vite chart modules) that renders in Storybook then breaks the classic-script runtime bundle.
+
 ## 1.6.0
 
 Cuts permission-prompt friction when skills read their own references, and lands the Storybook story conventions that kept needing manual correction.
