@@ -92,27 +92,39 @@ A SCSS swap to a self-hosted font renders in the twig Storybook but 404s in the 
 
 ---
 
-## JS output — two bundles and the classic-script contract
+## JS output — two build worlds and the classic-script contract
 
-The UIKit ships JS through **two separate build worlds**, and they have incompatible module formats. Confusing them is a live source of "every behaviour on the page is dead" bugs.
+The UIKit builds JS through **two separate build worlds** with incompatible module formats. Confusing them is a live source of "every behaviour on the page is dead" bugs (upstream issues [#2](https://github.com/JamesFehon-DTA/civictheme-uikit/issues/2) and [#3](https://github.com/JamesFehon-DTA/civictheme-uikit/issues/3)).
 
-| World | Artifact | Format | Consumed as |
+| World | Built by | Output | Format |
 |---|---|---|---|
-| Storybook / Vite (dev + preview) | `dist/civictheme.storybook.js` | **ESM** — carries top-level `export` statements (e.g. the chart code: `export const …`, `export function …`) | ES module, bundled by `@storybook/html-vite` |
-| Runtime (Drupal / static-site consumers) | `dist/civictheme.base.js` (Drupal library `dist/scripts.drupal.base.js`) | **classic script** — no `import`/`export`, global scope | plain `<script>` tag, **not** `type="module"` |
+| Concatenation build | Hand-rolled `packages/sdc/build.js` + `packages/twig/build.js` — `readFileSync` + `join('\n')`, no bundler, no module resolution | `dist/civictheme.js`, `dist/civictheme.storybook.js` (a **dev artifact**, `DOMContentLoaded`-wrapped), `dist/civictheme.drupal.base.js`, `dist/civictheme.base.js` | **classic script** — global scope, `Drupal.behaviors` / DOM-ready wrapping, loaded via plain `<script>`, never `type="module"` |
+| Vite (`vite@^6`) | Vite / Rollup | chart `*.data` ESM/UMD outputs; the Storybook **preview** (`dev:twig`) | **ESM** — `import` / `export` |
 
-Component JS is authored (and copied `components:update:twig`-verbatim) as **classic browser scripts** — `Drupal.behaviors` + `once()`, constructor + `querySelectorAll` sweep, globals on `window` (see `js-patterns.md`). The runtime bundle is loaded with a classic `<script>` — Drupal's library system and downstream consumers (e.g. an Astro `BaseLayout` loading `civictheme.base.js`) both omit `type="module"`.
+Component behaviour JS is authored (and copied `components:update:twig`-verbatim) as classic browser scripts — `Drupal.behaviors` + `once()`, constructor + `querySelectorAll` sweep, globals on `window` (see `js-patterns.md`). It reaches the browser through the **concatenation** world, loaded as a classic `<script>`. The `*.data` ESM modules (e.g. `chart.data.js`) belong to the **Vite** world and must never enter the concat.
 
-**The failure mode.** A classic `<script>` cannot parse a top-level `export`. If ESM-authored source leaks an `export` into the bundle that ships to the classic-script world, the browser throws `SyntaxError: Unexpected token 'export'` and **aborts the entire bundle** — so *all* CivicTheme behaviours (navigation, collapsible, mobile menu tray, …) silently die, not just the offending module. The symptom looks like "the JS didn't load"; the cause is one stray `export` at the top of a concatenated classic bundle.
+**The failure mode.** A classic `<script>` cannot parse a top-level `export`. The concat globs decide what gets swept in, and they disagree:
 
-**Who has to fix it, and where.** The correct fix is upstream in the UIKit build: either down-level the ESM-authored source into a genuine classic (IIFE/UMD) bundle so no `export` survives, **or** commit fully to ESM and have every consumer load it `type="module"`. Until the build does one of those, consumers patch it downstream at sync time — the DTA `dga-dl` site's `scripts/sync-uikit.mjs` renames `civictheme.storybook.js` → `civictheme.base.js` and strips exports:
+```
+JS_CIVIC_IMPORTS     = components/**/!(*.stories|*.stories.data|*.component|*.min|*.test|*.script|*.utils).js   # omits *.data ← bug
+JS_SDC_BASE_IMPORTS  = components/00-base/**/!(*.stories|*.test|*.data|*.stories.data|*.utils).js               # excludes *.data
+```
+
+Because `JS_CIVIC_IMPORTS` forgets `*.data`, an ESM `chart.data.js` gets concatenated into `dist/civictheme.js` / `dist/civictheme.storybook.js`, and its `export` throws `SyntaxError: Unexpected token 'export'` — which **aborts the entire concatenated bundle**, so *all* CivicTheme behaviours (navigation, collapsible, mobile menu tray, …) silently die, not just the offending module. The symptom looks like "the JS didn't load"; the cause is one stray `export`.
+
+**Who fixes it, and where.** Two upstream fixes, in sequence:
+
+- **Issue #2 (first):** add `*.data` to `JS_CIVIC_IMPORTS` in both `build.js` files, plus a CI guard (`vm.Script` parses each bundle with classic-script semantics; `npm run check:bundles`) that **rejects** exports rather than stripping them. Prototype on branch `claude/build-scripts-component-updates-3ccnsi`.
+- **Issue #3 (after):** replace hand-rolled concatenation with a real bundler that resolves ESM → IIFE/classic, publish a supported Drupal-safe runtime entry (behaviours-wrapped), and declare `main` / `module` / `exports` in `package.json` (currently absent). Then downstream consumers stop reaching for the `civictheme.storybook.js` dev artifact.
+
+Until #3 lands there is **no published runtime entry**, so consumers patch it downstream at sync time — the DTA `dga-dl` site's `scripts/sync-uikit.mjs` renames `civictheme.storybook.js` → `civictheme.base.js` and strips exports:
 
 ```js
 const stripEsmExports = (code) => code.replace(/^export\s+/gm, '');
 // FILES: ['civictheme.storybook.js', 'civictheme.base.js', stripEsmExports]
 ```
 
-Treat that regex as a **band-aid, not the model**. When authoring or reviewing UIKit component JS, the invariant is: **no top-level `import`/`export` in any file that lands in the runtime bundle.** `.stories.js` are the sole exception — they live only in the Vite/Storybook world and are never concatenated into the classic runtime bundle (see `js-patterns.md` → "The runtime bundle must stay export-free").
+Treat that regex as a **downstream band-aid, not the model** — the sanctioned fix rejects exports at the source (#2) and publishes a real entry (#3). When authoring or reviewing UIKit component JS, the invariant is: **anything the concat build sweeps in must be export-free.** `*.data` ESM modules are legitimate but belong to the Vite world and must stay excluded from the concat globs; `.stories.js` are already excluded. See `js-patterns.md` → "The runtime bundle must stay export-free".
 
 ---
 
