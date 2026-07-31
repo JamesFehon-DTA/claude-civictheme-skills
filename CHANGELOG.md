@@ -1,13 +1,21 @@
 # Changelog
 
+## Unreleased
+
+<!-- Write the notes for the next release here. The release workflow renames this heading to the new version and publishes the section as the GitHub release body. An empty section fails the release. -->
+
 ## 1.6.0
 
-Cuts permission-prompt friction when skills read their own references, and lands the Storybook story conventions that kept needing manual correction.
+Adds a reuse gate so component-JS work checks CivicTheme's existing behaviours before authoring new script, plus a read hook that removes per-file permission prompts.
 
-- **The plugin reads its own bundle without per-file prompts.** A `PreToolUse` hook (`scripts/allow_plugin_bundle_reads.sh`) auto-allows read-only access to files under the plugin install root, so a skill reading its `references/*.md` no longer raises a permission prompt per file. Scoped to `$CLAUDE_PLUGIN_ROOT` and checked against the resolved path – symlink escapes and `..` traversal are rejected, never denies, fails closed – anything outside the bundle still goes through the normal permission flow.
-- **Storybook story conventions, expanded and corrected** (`_shared/references/storybook-patterns.md`, shared by the UIKit, override, and SDC generators). Story titles now say to mirror a peer's prefix rather than assume the atomic tier – the UIKit files content components under `Content/Tables/…`, `Content/Charts/…`. Added: Docs-page `tags` (`autodocs` / `!autodocs` / `digitalgovau`) and why every prop needs an explicit `argTypes` (`@storybook/html-vite` has no docgen); a caution against demo `play` functions in showcase stories (they auto-run, a real form submit navigates off-story, `transitionend` assertions flake in CI) plus the one legitimate wiring use; the SDC-Storybook font/asset re-emit via `style.stories.scss`; and the DTA-fork `@sync-ignore` escape hatch for the twig `stories.js` asset-import drift.
-- **Health check now gates the silent SB8 background pattern.** New step 6 greps `*.stories.js` for `backgrounds: { default` and the other SB8 shapes, which render a white canvas on Storybook 10 with no error or warning. On the UIKit side `npm run validate` already runs `validate-stories-backgrounds.js`; this adds the gate on the sub-theme side, where `validate` is usually absent.
-- **`toolchain.md` sync model corrected and extended.** Fixed the sync-exclusions table: `.stories.twig` fixtures are not SDC-only – they exist in both packages and are hand-maintained, most byte-identical, but a fixture that includes a component (`data-vis` → `summary-list`) needs the `civictheme:` → `@tier/` transform applied by hand. The `@sync-ignore` escape hatch and the SDC-Storybook font re-emit also land here, so `civictheme-uikit-scss-iteration` (which reads `toolchain.md` via symlink) picks them up.
+- **Reuse gate before any component JS.** New `core-behaviours.md` maps each interaction (show/hide, dismiss, sticky, tabs, popover, skip-link) to the `00-base` behaviour that already implements it, with data-attribute contracts. The selector and UIKit generator both fire the gate: if a primitive matches, emit its markup and delete the bespoke script. Applies to ports too.
+- **`.storybook/` and story-API changes route as `config`,** not component work – edit in place, validate with build/lint, skip the generator's contract.
+- **JS init timing and verification documented.** Why the top-level `querySelectorAll` sweep works for `00-base` but not per-component files; new `js-verification.md` for the HTML-addon serialisation and `transitionend` traps.
+- **Plugin reads its own bundle without prompts.** `PreToolUse` hook scoped to the resolved `$CLAUDE_PLUGIN_ROOT`; rejects symlink and `..` escapes, never denies.
+- **Storybook story conventions expanded** – peer-mirrored titles, `tags`, explicit `argTypes`, no demo `play` functions.
+- **Health check gates the silent SB8 background pattern** on the sub-theme side, where `validate` is absent.
+- **`toolchain.md` sync model corrected** – `.stories.twig` fixtures exist in both packages and are hand-maintained.
+- **Release workflow refuses a mismatched manifest** – version base checked against the latest tag, tag verified before push.
 
 ## 1.5.0
 
