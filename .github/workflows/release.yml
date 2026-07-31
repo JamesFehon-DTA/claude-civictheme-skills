@@ -44,6 +44,22 @@ jobs:
           fi
           echo "version base $base is clean against latest tag $tag"
 
+      - name: Verify the Unreleased changelog section has notes
+        run: |
+          python - <<'PY'
+          import re, sys
+          from pathlib import Path
+
+          text = Path("CHANGELOG.md").read_text()
+          m = re.search(r"^## Unreleased$\n(.*?)(?=^## |\Z)", text, re.S | re.M)
+          body = re.sub(r"<!--.*?-->", "", m.group(1), flags=re.S).strip() if m else ""
+          if not body:
+              print("::error::CHANGELOG.md has no '## Unreleased' section with notes. "
+                    "The release body is published from that section, so write it before releasing.")
+              sys.exit(1)
+          print(f"unreleased section has {len(body.splitlines())} lines of notes")
+          PY
+
       - name: Bump version in plugin.json
         env:
           RELEASE_LEVEL: ${{ github.event.inputs.release-level }}
@@ -67,6 +83,32 @@ jobs:
           print(f"NEW_VERSION={d['version']}")
           PY
 
+      - name: Retitle the Unreleased section and extract the release body
+        run: |
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          PLACEHOLDER = (
+              "## Unreleased\n\n"
+              "<!-- Write the notes for the next release here. The release workflow renames this"
+              " heading to the new version and publishes the section as the GitHub release body."
+              " An empty section fails the release. -->\n\n"
+          )
+
+          version = os.environ["NEW_VERSION"]
+          p = Path("CHANGELOG.md")
+          text = p.read_text()
+          m = re.search(r"^## Unreleased$\n(.*?)(?=^## |\Z)", text, re.S | re.M)
+          assert m, "no '## Unreleased' section to retitle"
+          # Drop the placeholder comment, retitle to the new version, and seed a fresh
+          # Unreleased section above it so the next release has somewhere to write.
+          body = re.sub(r"<!--.*?-->", "", m.group(1), flags=re.S).strip()
+          p.write_text(f"{text[:m.start()]}{PLACEHOLDER}## {version}\n\n{body}\n\n{text[m.end():]}")
+          # Same body verbatim as the release page body.
+          Path(os.environ["RUNNER_TEMP"], "release-notes.md").write_text(body + "\n")
+          PY
+
       - name: Configure git as release bot
         env:
           GITHUB_ACTOR_ID: ${{ github.actor_id }}
@@ -76,7 +118,7 @@ jobs:
 
       - name: Commit, tag, verify, then push
         run: |
-          git add .claude-plugin/plugin.json
+          git add .claude-plugin/plugin.json CHANGELOG.md
           git commit -m "Released claude-civictheme-skills v${NEW_VERSION}."
           git tag "v${NEW_VERSION}"
           # GUARANTEE: the tag must point at a commit whose plugin.json == the tag,
@@ -98,4 +140,5 @@ jobs:
         run: |
           gh release create "v${NEW_VERSION}" \
             --title "claude-civictheme-skills v${NEW_VERSION}" \
+            --notes-file "${RUNNER_TEMP}/release-notes.md" \
             --generate-notes
